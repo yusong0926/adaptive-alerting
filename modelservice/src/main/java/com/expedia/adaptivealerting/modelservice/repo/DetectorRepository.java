@@ -32,6 +32,8 @@ public interface DetectorRepository extends PagingAndSortingRepository<Detector,
 
     List<Detector> findByUuid(@Param("uuid") String uuid);
 
+    List<Detector> findByCreatedBy(@Param("owner") String owner);
+
     @Query("select mmm.detector from MetricDetectorMapping mmm where mmm.metric.hash = :hash")
     List<Detector> findByMetricHash(@Param("hash") String hash);
 }
