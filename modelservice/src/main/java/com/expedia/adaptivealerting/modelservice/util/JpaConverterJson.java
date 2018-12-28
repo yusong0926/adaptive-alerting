@@ -15,18 +15,16 @@
  */
 package com.expedia.adaptivealerting.modelservice.util;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.persistence.AttributeConverter;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.HibernateException;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.persistence.AttributeConverter;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author kashah
@@ -36,15 +34,34 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class JpaConverterJson implements AttributeConverter<Object, String> {
 
     private final static ObjectMapper objectMapper = new ObjectMapper();
+    //Map<String,String> map = new HashMap<String, String>();
+    //private String tag_value;
+
 
     @Override
     public String convertToDatabaseColumn(Object data) {
         try {
+            //System.out.println("Value is: "+data);
+//            tag_value = objectMapper.writeValueAsString(data);
+//            System.out.println(tag_value);
+            // String[] arrStr = tag_value.split(":",-1);
+            // for (String a : arrStr)
+               // System.out.println(a);
+//            Map<String, String> map = objectMapper.convertValue(data, Map.class);
+//            System.out.println("Map data: "+map);
+            //System.out.println("Key Value pair is: "+map.keySet());
+            //System.out.println("Value is: "+map.values());
+
+            //tag_value=objectMapper.writeValueAsString(data);
+            //System.out.println(objectMapper.writeValueAsString(data));
+
             return objectMapper.writeValueAsString(data);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Could not convert to Json", e);
         }
     }
+
+
 
     @Override
     public Object convertToEntityAttribute(String dbData) {

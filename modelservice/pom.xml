@@ -106,6 +106,16 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!--&lt;!&ndash; Hibernate dependency&ndash;&gt;-->
+        <!--<dependency>-->
+            <!--<groupId>com.vladmihalcea</groupId>-->
+            <!--<artifactId>hibernate-types-52</artifactId>-->
+        <!--</dependency>-->
 
         <!-- Test -->
         <dependency>
@@ -113,6 +123,25 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+            <version>2.10.4</version>
+        </dependency>
+        <dependency>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
+            <version>RELEASE</version>
+        </dependency>
+        <!--
+        <dependency>
+        <groupId>org.json</groupId>
+        <artifactId>json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.json-simple</groupId>
+            <artifactId>json-simple</artifactId>
+        </dependency> -->
     </dependencies>
 
     <build>

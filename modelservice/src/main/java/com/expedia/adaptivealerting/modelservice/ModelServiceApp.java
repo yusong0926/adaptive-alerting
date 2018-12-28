@@ -15,6 +15,9 @@
  */
 package com.expedia.adaptivealerting.modelservice;
 
+import com.expedia.adaptivealerting.modelservice.service.OnboardService;
+import com.expedia.adaptivealerting.modelservice.service.OnboardServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -27,6 +30,7 @@ public class ModelServiceApp {
 
     public static void main(String[] args) {
         SpringApplication.run(ModelServiceApp.class, args);
+
     }
 
     @Bean

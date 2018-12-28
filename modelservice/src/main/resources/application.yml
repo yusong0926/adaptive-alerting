@@ -12,7 +12,7 @@ spring:
   jpa:
     openInView: true
     database: "MYSQL"
-    show-sql: false
+    show-sql: true
     generate-ddl: false
     hibernate:
       naming_strategy: "org.hibernate.cfg.ImprovedNamingStrategy"

@@ -54,8 +54,26 @@ create table metric_detector_mapping (
 
 create table user (
   id           int unsigned primary key not null auto_increment,
-  name         varchar(100) unique not null,
+  username         varchar(100) unique not null,
   password     varchar(100) not null,
   role         varchar(100),
   enabled      boolean
+);
+
+
+create table tag (
+id        int primary key NOT NULL AUTO_INCREMENT,
+ukey      varchar(255) not null,
+uvalue    varchar(255) not null,
+unique index (ukey, uvalue)
+);
+
+
+create table metric_tag_mapper(
+id        int primary key NOT NULL AUTO_INCREMENT,
+metric_id          int unsigned NOT NULL,
+tag_id       int NOT NULL,
+constraint metric_fk_id foreign key (metric_id) references metric (id),
+constraint metrictags_id_mapping_fk foreign key (tag_id) references tag (id),
+unique index (metric_id,tag_id)
 );

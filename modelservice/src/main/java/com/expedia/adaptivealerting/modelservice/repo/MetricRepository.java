@@ -21,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
+import springfox.documentation.spring.web.json.Json;
 
 import java.util.List;
 
@@ -70,10 +71,20 @@ public interface MetricRepository extends PagingAndSortingRepository<Metric, Lon
     /**
      * Finds a list of metrics by its matching tag. Tags has json data type and this query works only for json values and not keys.
      *
-     * @param tag Matching tag value.
+     * @param key Matching tag ukey.
+     * @param value Matching tag uvalue.
      * @return List of metrics by its matching tag
      */
-    @Query(nativeQuery = true, value = "SELECT * FROM (SELECT id, ukey, hash, tags, JSON_SEARCH(tags, \"all\", :tag) as tag_result FROM metric) as new_metric WHERE tag_result IS NOT NULL")
-    List<Metric> findByTagsContaining(@Param("tag") String tag);
+    /* @Query(nativeQuery = true, value = "SELECT * FROM (SELECT id, ukey, hash, tags, JSON_SEARCH(tags, \"all\", :tag) as tag_result FROM metric) as new_metric WHERE tag_result IS NOT NULL")
+    List<Metric> findByTagsContaining(@Param("tag") String tag); */
+
+    @Query(nativeQuery = true, value = "SELECT m.* FROM metric m INNER JOIN metric_tag_mapper mm on mm.metric_id = m.id  INNER JOIN tag t on t.id = mm.tag_id WHERE t.ukey = :key AND t.uvalue = :value")
+    List<Metric> findByTagContaining(@Param("key") String key, @Param("value") String value);
+
+
+
+
+    //@Query(nativeQuery = true, value = "select m.* from metric m where json_contains(m.tags,':tags')")
+    //List<Metric> findByTags(@Param("tags") String tags);
 
 }

@@ -1,10 +1,15 @@
 package com.expedia.adaptivealerting.modelservice.repo;
 
 import com.expedia.adaptivealerting.modelservice.entity.Metric;
+import com.expedia.adaptivealerting.modelservice.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.core.annotation.HandleBeforeCreate;
 import org.springframework.data.rest.core.annotation.RepositoryEventHandler;
 import org.springframework.stereotype.Component;
+
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 @Component
 @RepositoryEventHandler
@@ -12,6 +17,7 @@ public class MetricEventHandler {
 
     @Autowired
     MetricRepository metricRepository;
+
 
     @HandleBeforeCreate
     public void handleMetricCreate(Metric object) {
@@ -23,8 +29,19 @@ public class MetricEventHandler {
         // a matching hash could added after findByHash but before save.
         Object existingMetric = metricRepository.findByHash(object.getHash());
         if (existingMetric != null) {
+            System.out.println("Metric Already Exists");
             throw new ItemExistsException(existingMetric);
+
         }
+
+        Set<Tag> tags = new HashSet<>();
+        for (Map.Entry<String, Object> tagEntry: object.getTags().entrySet()) {
+            Tag tag = new Tag();
+            //tag.setTagKey(tagEntry.getKey());
+            tag.setKey(tagEntry.getKey());
+            tag.setValue(tagEntry.getValue().toString());
+            tags.add(tag);
+        }
+        object.setMetricTags(tags);
     }
 }
-
