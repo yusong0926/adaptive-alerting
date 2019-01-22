@@ -56,13 +56,19 @@ resource "kubernetes_config_map" "aa-config" {
 }
 
 
+resource "null_resource" "kubeconfig_dependency" {
+  triggers {
+    kubeconfig= "${var.kubectl_context_name}"
+  }
+}
 resource "null_resource" "kubectl_apply" {
+  depends_on = ["null_resource.kubectl_destroy"]
   triggers {
     template = "${data.template_file.deployment_yaml.rendered}"
   }
 
   provisioner "local-exec" {
-    command = "echo '${data.template_file.deployment_yaml.rendered}' | ${var.kubectl_executable_name} apply -f - --context ${var.kubectl_context_name}"
+    command = "echo '${data.template_file.deployment_yaml.rendered}' | ${var.kubectl_executable_name} apply -f - --kubeconfig ${var.kubectl_context_name}"
   }
 
   count = "${local.count}"
@@ -70,7 +76,7 @@ resource "null_resource" "kubectl_apply" {
 
 resource "null_resource" "kubectl_destroy" {
   provisioner "local-exec" {
-    command = "echo '${data.template_file.deployment_yaml.rendered}' | ${var.kubectl_executable_name} delete -f - --context ${var.kubectl_context_name}"
+    command = "echo '${data.template_file.deployment_yaml.rendered}' | ${var.kubectl_executable_name} delete -f - --kubeconfig ${var.kubectl_context_name}"
     when = "destroy"
   }
 
