@@ -64,7 +64,7 @@ resource "null_resource" "kubeconfig_dependency" {
   }
 }
 resource "null_resource" "kubectl_apply" {
-  depends_on = ["null_resource.kubectl_destroy"]
+  depends_on = ["null_resource.kubeconfig_dependency"]
   triggers {
     template = "${data.template_file.deployment_yaml.rendered}"
   }
