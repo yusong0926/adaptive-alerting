@@ -73,6 +73,7 @@ resource "null_resource" "kubectl_apply" {
 }
 
 resource "null_resource" "kubectl_destroy" {
+  depends_on = ["null_resource.kubeconfig_dependency"]
   provisioner "local-exec" {
     command = "echo '${data.template_file.deployment_yaml.rendered}' | ${var.kubectl_executable_name} delete -f - --kubeconfig ${var.kubectl_context_name}"
     when    = "destroy"
