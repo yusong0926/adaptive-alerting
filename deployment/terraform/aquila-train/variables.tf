@@ -15,7 +15,7 @@ variable "memory_request" {}
 variable "node_selector_label" {}
 variable "kubectl_executable_name" {}
 variable "kubectl_context_name" {}
-variable "aa_ui_cname" {}
+variable "aa_cname" {}
 variable "service_port" {
   default = 80
 }

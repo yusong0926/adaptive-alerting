@@ -13,7 +13,7 @@ data "template_file" "deployment_yaml" {
   template = "${file("${local.deployment_yaml_file_path}")}"
 
   vars {
-    aa_ui_cname = "${var.aa_ui_cname}"
+    aa_cname = "${var.aa_cname}"
     app_name = "${local.app_name}"
     namespace = "${var.namespace}"
     graphite_port = "${var.graphite_port}"

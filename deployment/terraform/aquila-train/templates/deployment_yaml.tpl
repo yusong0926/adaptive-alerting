@@ -89,7 +89,7 @@ metadata:
     traefik.frontend.rule.type: PathPrefixStrip
 spec:
   rules:
-   - host: ${aa_ui_cname}
+   - host: ${aa_cname}
      http:
        paths:
        - path: /aquila-trainer

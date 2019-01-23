@@ -1,7 +1,7 @@
 variable "image" {}
 variable "replicas" {}
 variable "namespace" {}
-variable "aa_ui_cname" {}
+variable "aa_cname" {}
 variable "db_endpoint" {}
 variable "graphite_hostname" {}
 variable "graphite_port" {}

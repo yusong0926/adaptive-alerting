@@ -23,7 +23,7 @@ module "modelservice" {
   node_selector_label = "${var.node_selector_label}"
   kubectl_executable_name = "${var.kubectl_executable_name}"
   kubectl_context_name = "${var.kubectl_context_name}"
-  aa_ui_cname = "${var.aa_ui_cname}"
+  aa_cname = "${var.aa_cname}"
 
   # Environment
   jvm_memory_limit = "${var.modelservice["jvm_memory_limit"]}"
@@ -194,6 +194,7 @@ module "aquila-detector" {
   node_selector_label = "${var.node_selector_label}"
   kubectl_executable_name = "${var.kubectl_executable_name}"
   kubectl_context_name = "${var.kubectl_context_name}"
+  aa_cname = "${var.aa_cname}"
 
   # Environment
   jvm_memory_limit = "${var.aquila-detector["jvm_memory_limit"]}"
@@ -221,6 +222,7 @@ module "aquila-trainer" {
   node_selector_label = "${var.node_selector_label}"
   kubectl_executable_name = "${var.kubectl_executable_name}"
   kubectl_context_name = "${var.kubectl_context_name}"
+  aa_cname = "${var.aa_cname}"
 
   # Environment
   jvm_memory_limit = "${var.aquila-trainer["jvm_memory_limit"]}"

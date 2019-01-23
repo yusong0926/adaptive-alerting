@@ -6,7 +6,7 @@ variable "image_pull_policy" {
 
 # Kubernetes
 variable "namespace" {}
-variable "aa_ui_cname" {}
+variable "aa_cname" {}
 variable "enabled" {}
 variable "replicas" {}
 variable "cpu_limit" {}
