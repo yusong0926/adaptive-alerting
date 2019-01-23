@@ -79,3 +79,21 @@ spec:
     targetPort: ${container_port}
   selector:
     k8s-app: ${app_name}
+apiVersion: extensions/v1beta1
+# ------------------- Ingress ------------------- #
+kind: Ingress
+metadata:
+  name: traefik-aquila-detector
+  namespace: ${namespace}
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.frontend.rule.type: PathPrefixStrip
+spec:
+  rules:
+   - host: ${aa_ui_cname}
+     http:
+       paths:
+       - path: /aquila-detector
+         backend:
+           serviceName: aquila-detector
+           servicePort: 80
