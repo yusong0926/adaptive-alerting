@@ -1,6 +1,6 @@
 ad-manager {
   streams {
-    application.id = "ad-manager"
+    application.id = "ad-manager-2"
     bootstrap.servers = "${kafka_endpoint}"
     default.value.serde = "com.expedia.adaptivealerting.kafka.serde.JsonPojoSerde"
     JsonPojoClass = "com.expedia.adaptivealerting.core.data.MappedMetricData"
@@ -44,7 +44,7 @@ ad-manager {
     }
   }
   health.status.path = "/app/isHealthy"
-  inbound-topic = "mapped-metrics"
-  outbound-topic = "anomalies"
+  inbound-topic = "mapped-metrics-2"
+  outbound-topic = "anomalies-2"
   model-service-uri-template = "${modelservice_uri_template}"
 }
