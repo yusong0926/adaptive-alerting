@@ -15,8 +15,8 @@
  */
 package com.expedia.adaptivealerting.anomdetect.util;
 
+import com.expedia.adaptivealerting.anomdetect.util.metrics_java.MetricTankIdFactory;
 import com.expedia.metrics.MetricDefinition;
-import com.expedia.metrics.metrictank.MetricTankIdFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
