@@ -46,49 +46,64 @@ import static com.expedia.adaptivealerting.core.util.AssertUtil.notNull;
 @Slf4j
 public class ModelServiceConnector {
     private final MetricTankIdFactory metricTankIdFactory = new MetricTankIdFactory();
-    
+
     // https://hdpe.me/post/spring-data-rest-hal-client/
     private final ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json()
             .modules(new Jackson2HalModule())
             .build();
-    
+
     @Getter
     private HttpClientWrapper httpClient;
-    
+
     @Getter
     private String uriTemplate;
-    
+
+    private final String FIND_DETECTOR_ENDPOINT = "findByMetricHash?hash=%s";
+    private final String DEFAULT_DETECTOR_ENDPOINT = "findDefaultDetectors";
+    private final String FIND_LATEST_MODEL_ENDPOINT = "findLatestByDetectorUuid?uuid=%s";
+
+
     public ModelServiceConnector(HttpClientWrapper httpClient, String uriTemplate) {
         notNull(httpClient, "httpClient can't be null");
         notNull(uriTemplate, "uriTemplate can't be null");
         this.httpClient = httpClient;
         this.uriTemplate = uriTemplate;
     }
-    
+
     public Resources<DetectorResource> findDetectors(MetricDefinition metricDefinition) {
         notNull(metricDefinition, "metricDefinition can't be null");
-        
+
         final String id = metricTankIdFactory.getId(metricDefinition);
         final String uri = String.format(uriTemplate, id);
-        
+
         log.info("Finding detectors: metricDefinition={}, id={}, uri={}", metricDefinition, id, uri);
-        try {
-            final Content content = httpClient.get(uri);
-            return objectMapper.readValue(content.asBytes(), DetectorResources.class);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return getDetectors(uri);
+    }
+
+    public Resources<DetectorResource> findDefaultDetector(MetricDefinition metricDefinition) {
+        final String uri = uriTemplate + DEFAULT_DETECTOR_ENDPOINT;
+        log.info("Fetch default detectors : metricDefinition={}, uri={} ", metricDefinition, uri);
+        return getDetectors(uri);
     }
 
     public Resources<ModelResource> findModels(UUID detectorUuid) {
         notNull(detectorUuid, "detectorUuid can't be null");
 
-        final String uri = String.format(uriTemplate, detectorUuid);
+        final String uri = String.format(uriTemplate + FIND_LATEST_MODEL_ENDPOINT, detectorUuid);
 
         log.info("Finding models: , uuid={}, uri={}", detectorUuid, uri);
         try {
             final Content content = httpClient.get(uri);
             return objectMapper.readValue(content.asBytes(), ModelResources.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Resources<DetectorResource> getDetectors(String uri){
+        try {
+            final Content content = httpClient.get(uri);
+            return objectMapper.readValue(content.asBytes(), DetectorResources.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -43,10 +43,10 @@ import static com.expedia.adaptivealerting.core.util.AssertUtil.notNull;
  */
 @Slf4j
 public class AnomalyDetectorMapper {
-    
+
     @Getter
     private ModelServiceConnector modelServiceConnector;
-    
+
     /**
      * Creates a new mapper.
      *
@@ -56,7 +56,7 @@ public class AnomalyDetectorMapper {
         notNull(modelServiceConnector, "modelServiceConnector can't be null");
         this.modelServiceConnector = modelServiceConnector;
     }
-    
+
     /**
      * Maps an {@link MetricData} to its corresponding set of {@link MappedMetricData}s.
      *
@@ -65,14 +65,16 @@ public class AnomalyDetectorMapper {
      */
     public Set<MappedMetricData> map(MetricData metricData) {
         notNull(metricData, "metricData can't be null");
-        
+
         final MetricDefinition metricDefinition = metricData.getMetricDefinition();
         final Resources<DetectorResource> detectorResources = modelServiceConnector.findDetectors(metricDefinition);
-        final Collection<DetectorResource> detectorCollection = detectorResources.getContent();
-        
+        final Collection<DetectorResource> detectorCollection =
+                detectorResources.getContent().isEmpty() ?
+                modelServiceConnector.findDefaultDetector(metricDefinition).getContent() : detectorResources.getContent();
+
         // TODO This logging is expensive. Don't want to keep it permanently, at least not at INFO level. [WLW]
         log.info("metricData={}, models={}", metricData, Arrays.toString(detectorCollection.toArray()));
-        
+
         return detectorCollection.stream()
                 .map(model -> {
                     final UUID detectorUuid = UUID.fromString(model.getUuid());

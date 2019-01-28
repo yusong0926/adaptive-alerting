@@ -54,4 +54,7 @@ public interface DetectorRepository extends PagingAndSortingRepository<Detector,
      */
     @Query("select mmm.detector from MetricDetectorMapping mmm where mmm.metric.hash = :hash")
     List<Detector> findByMetricHash(@Param("hash") String hash);
+
+    @Query(nativeQuery = true, value = "SELECT d1.* FROM  detector d1  where d1.isDefault=true;")
+    List<Detector> findDefaultDetectors(@Param("uuid") String uuid);
 }

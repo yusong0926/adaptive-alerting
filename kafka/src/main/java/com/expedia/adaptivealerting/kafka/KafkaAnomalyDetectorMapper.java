@@ -44,7 +44,7 @@ import static com.expedia.adaptivealerting.core.util.AssertUtil.notNull;
 public final class KafkaAnomalyDetectorMapper extends AbstractStreamsApp {
     static final String CK_AD_MAPPER = "ad-mapper";
     static final String CK_MODEL_SERVICE_URI_TEMPLATE = "model-service-uri-template";
-    
+
     private final AnomalyDetectorMapper mapper;
     
     public static void main(String[] args) {

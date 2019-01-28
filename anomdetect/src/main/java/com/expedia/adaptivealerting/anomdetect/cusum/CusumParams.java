@@ -30,7 +30,7 @@ public final class CusumParams {
     /**
      * Detector type: left-, right- or two-tailed.
      */
-    private AnomalyType type;
+    private AnomalyType type = AnomalyType.TWO_TAILED;
 
     /**
      * Target value (i.e., the set point).
