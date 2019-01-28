@@ -1,0 +1,63 @@
+version: "3"
+services:
+#  zookeeper:
+#    image: wurstmeister/zookeeper
+#    ports:
+#    - "2181:2181"
+#
+#  kafkasvc:
+#    image: wurstmeister/kafka:2.11-1.1.1
+#    depends_on:
+#    - zookeeper
+#    environment:
+#      KAFKA_ADVERTISED_HOST_NAME: "kafkasvc"
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+#      KAFKA_CREATE_TOPICS: "proto-spans:1:1,metricpoints:1:1,metrics:1:1,metrics:1:1,mapped-metrics:1:1,anomalies:1:1"
+#    volumes:
+#    - /var/run/docker.sock:/var/run/docker.sock
+#    ports:
+#    - "9092:9092"
+
+  database:
+    image: mysql:5.7
+    ports:
+    - "33061:3306"
+    restart: always
+    volumes:
+      -  ./modelservice/sql:/home/
+      -  ./modelservice/db_init:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: aa_model_service
+
+
+#  modelservice:
+#    image: "image": "expediadotcom/adaptive-alerting-modelservice:latest"
+#    environment:
+#      AA_OVERRIDES_CONFIG_PATH : "config/docker.conf"
+#
+#  aa-mapper:
+#    image: "image": "expediadotcom/adaptive-alerting-ad-mapper:latest"
+#    environment:
+#      AA_OVERRIDES_CONFIG_PATH : "config/docker.conf"
+#    depends_on:
+#      - kafka
+#      - zookeeper
+#      - modelservice
+#    links:
+#      - kafka
+#      - modelservice
+#
+#  aa-manager:
+#    image: "image": "expediadotcom/adaptive-alerting-ad-manager:latest"
+#    environment:
+#      AA_OVERRIDES_CONFIG_PATH : "config/docker.conf"
+#    depends_on:
+#      - kafka
+#      - zookeeper
+#      - modelservice
+#    links:
+#      - kafka
+#      - modelservice
+
