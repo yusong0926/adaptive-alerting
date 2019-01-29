@@ -32,13 +32,18 @@ services:
       MYSQL_DATABASE: aa_model_service
 
 
-#  modelservice:
-#    image: "image": "expediadotcom/adaptive-alerting-modelservice:latest"
-#    environment:
-#      AA_OVERRIDES_CONFIG_PATH : "config/docker.conf"
+  modelservice:
+    image: "adaptive-alerting-modelservice:latest"
+    ports:
+    - "8008:8008"
+    environment:
+      spring.config.name : "docker-application.yml"
+    depends_on:
+      - database
+
 #
 #  aa-mapper:
-#    image: "image": "expediadotcom/adaptive-alerting-ad-mapper:latest"
+#    image: "expediadotcom/adaptive-alerting-ad-mapper:latest"
 #    environment:
 #      AA_OVERRIDES_CONFIG_PATH : "config/docker.conf"
 #    depends_on:
@@ -50,7 +55,7 @@ services:
 #      - modelservice
 #
 #  aa-manager:
-#    image: "image": "expediadotcom/adaptive-alerting-ad-manager:latest"
+#    image: "expediadotcom/adaptive-alerting-ad-manager:latest"
 #    environment:
 #      AA_OVERRIDES_CONFIG_PATH : "config/docker.conf"
 #    depends_on:

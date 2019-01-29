@@ -31,7 +31,7 @@ EOF
 
 do_package() {
     echo 'Packaging...'
-    mvn clean install spring-boot:repackage -DskipTests
+    mvn clean install -U spring-boot:repackage -DskipTests
 }
 
 do_build() {
