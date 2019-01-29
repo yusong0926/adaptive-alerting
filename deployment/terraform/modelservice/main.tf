@@ -13,7 +13,6 @@ data "template_file" "deployment_yaml" {
   template = "${file("${local.deployment_yaml_file_path}")}"
 
   vars {
-    aa_cname = "${var.aa_cname}"
     app_name = "${local.app_name}"
     namespace = "${var.namespace}"
     graphite_port = "${var.graphite_port}"
@@ -57,28 +56,21 @@ resource "kubernetes_config_map" "aa-config" {
 }
 
 
-resource "null_resource" "kubeconfig_dependency" {
-  triggers {
-    kubeconfig= "${var.kubectl_context_name}"
-  }
-}
 resource "null_resource" "kubectl_apply" {
-  depends_on = ["null_resource.kubeconfig_dependency"]
   triggers {
     template = "${data.template_file.deployment_yaml.rendered}"
   }
 
   provisioner "local-exec" {
-    command = "echo '${data.template_file.deployment_yaml.rendered}' | ${var.kubectl_executable_name} apply -f - --kubeconfig ${var.kubectl_context_name}"
+    command = "echo '${data.template_file.deployment_yaml.rendered}' | ${var.kubectl_executable_name} apply -f - --context ${var.kubectl_context_name}"
   }
 
   count = "${local.count}"
 }
 
 resource "null_resource" "kubectl_destroy" {
-  depends_on = ["null_resource.kubeconfig_dependency"]
   provisioner "local-exec" {
-    command = "echo '${data.template_file.deployment_yaml.rendered}' | ${var.kubectl_executable_name} delete -f - --kubeconfig ${var.kubectl_context_name}"
+    command = "echo '${data.template_file.deployment_yaml.rendered}' | ${var.kubectl_executable_name} delete -f - --context ${var.kubectl_context_name}"
     when = "destroy"
   }
 
