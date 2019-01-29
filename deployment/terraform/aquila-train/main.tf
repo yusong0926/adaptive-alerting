@@ -16,7 +16,7 @@ data "template_file" "deployment_yaml" {
 
   vars {
     app_name            = "${local.app_name}"
-
+    aa_cname            = "${var.aa_cname}"
     # Docker
     image               = "${var.image}"
     image_pull_policy   = "${var.image_pull_policy}"

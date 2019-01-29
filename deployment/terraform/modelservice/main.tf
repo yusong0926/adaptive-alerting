@@ -14,6 +14,7 @@ data "template_file" "deployment_yaml" {
 
   vars {
     app_name = "${local.app_name}"
+    aa_cname = "${var.aa_cname}"
     namespace = "${var.namespace}"
     graphite_port = "${var.graphite_port}"
     graphite_host = "${var.graphite_hostname}"
@@ -44,7 +45,7 @@ data "template_file" "config_data" {
 
 resource "kubernetes_config_map" "aa-config" {
   metadata {
-    name      = "${local.configmap_name}"
+    name = "${local.configmap_name}"
     namespace = "${var.namespace}"
   }
 
