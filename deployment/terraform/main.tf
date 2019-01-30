@@ -40,7 +40,7 @@ module "ad-mapper" {
   source = "ad-mapper"
 
   # Docker
-  image = "${var.ad-mapper["image"]}"
+  image = "expediadotcom/adaptive-alerting-ad-mapper:${var.alerting["version"]}"
   image_pull_policy = "${var.ad-mapper["image_pull_policy"]}"
 
   # Kubernetes
@@ -71,7 +71,7 @@ module "ad-manager" {
   source = "ad-manager"
 
   # Docker
-  image = "${var.ad-manager["image"]}"
+  image = "expediadotcom/adaptive-alerting-ad-manager:${var.alerting["version"]}"
   image_pull_policy = "${var.ad-manager["image_pull_policy"]}"
 
   # Kubernetes
@@ -105,7 +105,7 @@ module "mc-a2m-mapper" {
   source = "mc-a2m-mapper"
 
   # Docker
-  image = "${var.mc-a2m-mapper["image"]}"
+  image = "expediadotcom/adaptive-alerting-mc-a2m-mapper:${var.alerting["version"]}"
   image_pull_policy = "${var.mc-a2m-mapper["image_pull_policy"]}"
 
   # Kubernetes
