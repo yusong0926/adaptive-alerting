@@ -40,6 +40,7 @@
         <maven.assembly.plugin.version>3.1.0</maven.assembly.plugin.version>
         <jacoco-percentage>0.5</jacoco-percentage>
         <jacoco-branch-percentage>0.18</jacoco-branch-percentage>
+        <pmd.ruleset.location>../buildtools/pmd/ruleset_local.xml</pmd.ruleset.location>
     </properties>
 
     <dependencies>

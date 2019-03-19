@@ -33,6 +33,10 @@
     <name>${project.groupId}:${project.artifactId}</name>
     <description>Model development tools.</description>
 
+    <properties>
+        <pmd.ruleset.location>../buildtools/pmd/ruleset_local.xml</pmd.ruleset.location>
+    </properties>
+
     <dependencies>
 
         <!-- Compile -->

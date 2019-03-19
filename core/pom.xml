@@ -36,6 +36,7 @@
     <properties>
         <jacoco-percentage>0.4</jacoco-percentage>
         <jacoco-branch-percentage>0.3</jacoco-branch-percentage>
+        <pmd.ruleset.location>../buildtools/pmd/ruleset_local.xml</pmd.ruleset.location>
     </properties>
 
     <dependencies>

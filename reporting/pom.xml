@@ -38,6 +38,10 @@
     <name>${project.groupId}:${project.artifactId}</name>
     <description>Adaptive Alerting reporting module.</description>
 
+    <properties>
+        <pmd.ruleset.location>../buildtools/pmd/ruleset_local.xml</pmd.ruleset.location>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.expedia.adaptivealerting</groupId>
