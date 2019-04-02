@@ -26,13 +26,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import java.sql.Timestamp;
+import java.util.Date;
 import java.util.Map;
 
 /**
  * Anomaly detection model.
- *
- * @author kashah
  */
 @Data
 @Entity
@@ -49,18 +47,6 @@ public class Model {
     @Convert(converter = JpaConverterJson.class)
     private Map<String, Object> params;
 
-    /**
-     * DB-driven weak sigma override for models that have this parameter. Allows us to make sensitivity adjustments in
-     * response to user feedback when ground truth classifications aren't available.
-     */
-    private Double weakSigmas;
-
-    /**
-     * DB-driven strong sigma override for models that have this parameter. Allows us to make sensitivity adjustments in
-     * response to user feedback when ground truth classifications aren't available.
-     */
-    private Double strongSigmas;
-
-    @Column(name = "date_created")
-    private Timestamp dateCreated;
+    @Column(name = "date_created", insertable = false)
+    private Date dateCreated;
 }

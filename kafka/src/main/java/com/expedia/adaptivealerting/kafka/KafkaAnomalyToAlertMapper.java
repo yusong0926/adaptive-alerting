@@ -17,8 +17,9 @@ package com.expedia.adaptivealerting.kafka;
 
 import com.expedia.adaptivealerting.core.anomaly.AnomalyLevel;
 import com.expedia.adaptivealerting.core.data.MappedMetricData;
-import com.expedia.adaptivealerting.kafka.serde.JsonPojoSerde;
+import com.expedia.adaptivealerting.kafka.serde.AlertJsonSerde;
 import com.expedia.alertmanager.model.Alert;
+import lombok.Generated;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.kafka.common.serialization.Serdes;
@@ -42,7 +43,9 @@ public class KafkaAnomalyToAlertMapper extends AbstractStreamsApp {
     private static final String TIMESTAMP = "timestamp";
     private static final String ANOMALY_LEVEL = "anomalyLevel";
 
-
+    // Cleaned code coverage
+    // https://reflectoring.io/100-percent-test-coverage/
+    @Generated
     public static void main(String[] args) {
         val tsConfig = new TypesafeConfigLoader(APP_ID).loadMergedConfig();
         val saConfig = new StreamsAppConfig(tsConfig);
@@ -58,12 +61,11 @@ public class KafkaAnomalyToAlertMapper extends AbstractStreamsApp {
         super(config);
     }
 
-
     @Override
     protected Topology buildTopology() {
         val config = getConfig();
-        val inboundTopic = config.getInboundTopic();
-        val outboundTopic = config.getOutboundTopic();
+        val inboundTopic = config.getInputTopic();
+        val outboundTopic = config.getOutputTopic();
 
         log.info("Initializing: inboundTopic={}, outboundTopic={}", inboundTopic, outboundTopic);
 
@@ -72,23 +74,29 @@ public class KafkaAnomalyToAlertMapper extends AbstractStreamsApp {
         stream.filter((key, mappedMetricData) -> AnomalyLevel.STRONG.equals(mappedMetricData.getAnomalyResult().getAnomalyLevel()) ||
                 AnomalyLevel.WEAK.equals(mappedMetricData.getAnomalyResult().getAnomalyLevel()))
                 .map((key, mappedMetricData) -> {
-                    val alert = new Alert();
-                    alert.setName(mappedMetricData.getMetricData().getMetricDefinition().getKey());
-                    val tags = mappedMetricData.getMetricData().getMetricDefinition().getTags().getKv();
-                    AnomalyLevel anomalyLevel = mappedMetricData.getAnomalyResult().getAnomalyLevel();
+                    val metricData = mappedMetricData.getMetricData();
+                    val metricDef = metricData.getMetricDefinition();
+                    val tags = metricDef.getTags().getKv();
+                    Double value = metricData.getValue();
+                    Long timestamp = metricData.getTimestamp();
+                    val anomalyLevel = mappedMetricData.getAnomalyResult().getAnomalyLevel();
+
                     val labels = new HashMap<String, String>(tags);
-                    labels.put(METRIC_KEY, mappedMetricData.getMetricData().getMetricDefinition().getKey());
+                    labels.put(METRIC_KEY, metricDef.getKey());
                     labels.put(ANOMALY_LEVEL, anomalyLevel.toString());
-                    alert.setLabels(labels);
-                    Double value = mappedMetricData.getMetricData().getValue();
-                    Long timestamp = mappedMetricData.getMetricData().getTimestamp();
+
                     val annotations = new HashMap<String, String>();
                     annotations.put(VALUE, value.toString());
                     annotations.put(TIMESTAMP, timestamp.toString());
+
+                    val alert = new Alert();
+                    alert.setName(metricDef.getKey());
+                    alert.setLabels(labels);
                     alert.setAnnotations(annotations);
+
                     return KeyValue.pair(mappedMetricData.getDetectorUuid().toString(), alert);
                 })
-                .to(outboundTopic, Produced.with(new Serdes.StringSerde(), new JsonPojoSerde<>()));
+                .to(outboundTopic, Produced.with(new Serdes.StringSerde(), new AlertJsonSerde()));
 
         return builder.build();
     }

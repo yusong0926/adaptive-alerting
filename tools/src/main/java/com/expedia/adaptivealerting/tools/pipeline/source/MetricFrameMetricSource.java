@@ -17,17 +17,18 @@ package com.expedia.adaptivealerting.tools.pipeline.source;
 
 import com.expedia.adaptivealerting.core.data.MetricFrame;
 import com.expedia.metrics.MetricData;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 import java.util.ListIterator;
 
 /**
  * Metric source backed by a {@link MetricFrame}.
- *
- * @author Willie Wheeler
  */
+@Slf4j
 public final class MetricFrameMetricSource extends AbstractMetricSource {
-    private ListIterator<MetricData> metricDataIterator;
-    
+    private ListIterator<MetricData> metricDataListIterator;
+
     /**
      * Publishes data from the given metric frame to any subscribers.
      *
@@ -37,13 +38,15 @@ public final class MetricFrameMetricSource extends AbstractMetricSource {
      */
     public MetricFrameMetricSource(MetricFrame metricFrame, String metricName, long periodMs) {
         super(metricName, periodMs);
-        this.metricDataIterator = metricFrame.listIterator();
+        this.metricDataListIterator = metricFrame.listIterator();
     }
-    
+
     @Override
     public MetricData next() {
-        if (metricDataIterator.hasNext()) {
-            return metricDataIterator.next();
+        if (metricDataListIterator.hasNext()) {
+            val metricData = metricDataListIterator.next();
+            log.info("metricData={}", metricData);
+            return metricData;
         } else {
             return null;
         }

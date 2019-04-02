@@ -15,71 +15,187 @@
  */
 package com.expedia.adaptivealerting.kafka;
 
-import com.expedia.adaptivealerting.anomdetect.AnomalyToMetricTransformer;
+import com.expedia.adaptivealerting.anomdetect.AnomalyToMetricMapper;
+import com.expedia.adaptivealerting.core.anomaly.AnomalyLevel;
+import com.expedia.adaptivealerting.core.anomaly.AnomalyResult;
 import com.expedia.adaptivealerting.core.data.MappedMetricData;
-import com.expedia.adaptivealerting.kafka.serde.MetricDataSerde;
+import com.expedia.adaptivealerting.kafka.util.ConfigUtil;
+import com.expedia.metrics.MetricData;
+import com.expedia.metrics.MetricDefinition;
 import com.expedia.metrics.metrictank.MetricTankIdFactory;
+import com.typesafe.config.Config;
+import lombok.Generated;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.streams.KeyValue;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.Topology;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.Produced;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.errors.WakeupException;
+
+import java.util.Collections;
 
 /**
- * Kafka Streams adapter for {@link AnomalyToMetricTransformer}.
- *
- * Note: Currently, the input and output topics must reside on the same Kafka cluster, as noted in
- * https://kafka.apache.org/11/documentation/streams/developer-guide/config-streams.html. Future versions of Kafka
- * Streams will support input and output topics on different clusters.
- *
- * @author Willie Wheeler
+ * Maps anomalies to metrics. Note that the input topic actually contains {@link MappedMetricData} rather than
+ * {@link AnomalyResult}.
  */
 @Slf4j
-public final class KafkaAnomalyToMetricMapper extends AbstractStreamsApp {
+public class KafkaAnomalyToMetricMapper implements Runnable {
     private static final String APP_ID = "a2m-mapper";
-    
-    private final AnomalyToMetricTransformer transformer = new AnomalyToMetricTransformer();
+    private static final String ANOMALY_CONSUMER = "anomaly-consumer";
+    private static final String METRIC_PRODUCER = "metric-producer";
+    private static final String TOPIC = "topic";
+    private static final long POLL_PERIOD = 1000L;
+
+    private final AnomalyToMetricMapper mapper = new AnomalyToMetricMapper();
+
+    // TODO Replace this with the non-MetricTank version. [WLW]
     private final MetricTankIdFactory metricTankIdFactory = new MetricTankIdFactory();
-    
+
+    @Getter
+    private final Consumer<String, MappedMetricData> anomalyConsumer;
+
+    @Getter
+    private final Producer<String, MetricData> metricProducer;
+
+    @Getter
+    private String anomalyTopic;
+
+    @Getter
+    private String metricTopic;
+
+    // Cleaned code coverage
+    // https://reflectoring.io/100-percent-test-coverage/
+    @Generated
     public static void main(String[] args) {
-        val tsConfig = new TypesafeConfigLoader(APP_ID).loadMergedConfig();
-        val saConfig = new StreamsAppConfig(tsConfig);
-        new KafkaAnomalyToMetricMapper(saConfig).start();
+        // TODO Refactor the loader such that it's not tied to Kafka Streams. [WLW]
+        buildMapper(new TypesafeConfigLoader(APP_ID).loadMergedConfig()).run();
     }
-    
-    /**
-     * Creates a new Kafka Streams adapter for the {@link AnomalyToMetricTransformer}.
-     *
-     * @param config Streams app configuration.
-     */
-    public KafkaAnomalyToMetricMapper(StreamsAppConfig config) {
-        super(config);
+
+    // Extracted for unit testing
+    static KafkaAnomalyToMetricMapper buildMapper(Config config) {
+        val anomalyConsumerConfig = config.getConfig(ANOMALY_CONSUMER);
+        val anomalyConsumerTopic = anomalyConsumerConfig.getString(TOPIC);
+        val anomalyConsumerProps = ConfigUtil.toConsumerConfig(anomalyConsumerConfig);
+        val anomalyConsumer = new KafkaConsumer<String, MappedMetricData>(anomalyConsumerProps);
+
+        val metricProducerConfig = config.getConfig(METRIC_PRODUCER);
+        val metricProducerTopic = metricProducerConfig.getString(TOPIC);
+        val metricProducerProps = ConfigUtil.toProducerConfig(metricProducerConfig);
+        val metricProducer = new KafkaProducer<String, MetricData>(metricProducerProps);
+
+        return new KafkaAnomalyToMetricMapper(
+                anomalyConsumer,
+                metricProducer,
+                anomalyConsumerTopic,
+                metricProducerTopic);
     }
-    
+
+    public KafkaAnomalyToMetricMapper(
+            Consumer<String, MappedMetricData> anomalyConsumer,
+            Producer<String, MetricData> metricProducer,
+            String anomalyTopic,
+            String metricTopic) {
+
+        this.anomalyConsumer = anomalyConsumer;
+        this.metricProducer = metricProducer;
+        this.anomalyTopic = anomalyTopic;
+        this.metricTopic = metricTopic;
+    }
+
     @Override
-    protected Topology buildTopology() {
-        val config = getConfig();
-        val inboundTopic = config.getInboundTopic();
-        val outboundTopic = config.getOutboundTopic();
-        
-        log.info("Initializing: inboundTopic={}, outboundTopic={}", inboundTopic, outboundTopic);
-        
-        val builder = new StreamsBuilder();
-        final KStream<String, MappedMetricData> stream = builder.stream(inboundTopic);
-        stream
-                .map((key, mappedMetricData) -> {
-                    val anomalyResult = mappedMetricData.getAnomalyResult();
-                    val metricData = transformer.transform(anomalyResult);
-                    val metricDef = metricData.getMetricDefinition();
-                    val metricId = metricTankIdFactory.getId(metricDef);
-                    return KeyValue.pair(metricId, metricData);
-                })
-                // TODO Make outbound serde configurable. [WLW]
-                .to(outboundTopic, Produced.with(new Serdes.StringSerde(), new MetricDataSerde()));
-        
-        return builder.build();
+    public void run() {
+        log.info("Starting KafkaAnomalyToMetricMapper");
+        anomalyConsumer.subscribe(Collections.singletonList(anomalyTopic));
+        boolean continueProcessing = true;
+
+        // See Kafka: The Definitive Guide, pp. 86 ff.
+        while (continueProcessing) {
+            try {
+                pollAnomalyTopic();
+            } catch (WakeupException e) {
+                log.info("Stopping KafkaAnomalyToMetricMapper");
+                anomalyConsumer.close();
+                metricProducer.flush();
+                metricProducer.close();
+                continueProcessing = false;
+            } catch (Exception e) {
+                log.error("Error processing records", e);
+            }
+        }
+    }
+
+    private void pollAnomalyTopic() {
+        val anomalyRecords = anomalyConsumer.poll(POLL_PERIOD);
+        val numConsumed = anomalyRecords.count();
+
+        log.trace("Read {} anomaly records from topic={}", numConsumed, anomalyTopic);
+//        recordsConsumed.increment(numConsumed);
+
+        int numProduced = 0;
+        for (val anomalyRecord : anomalyRecords) {
+            val anomalyMMD = anomalyRecord.value();
+            val anomalyResult = anomalyMMD.getAnomalyResult();
+            val anomalyLevel = anomalyResult.getAnomalyLevel();
+            if (anomalyLevel == AnomalyLevel.WEAK || anomalyLevel == AnomalyLevel.STRONG) {
+                val metricDataRecord = toMetricDataRecord(anomalyRecord);
+                if (metricDataRecord != null) {
+                    metricProducer.send(metricDataRecord);
+                    numProduced++;
+                }
+            }
+        }
+
+        log.trace("Wrote {} metricData records to topic={}", numProduced, metricTopic);
+//        recordsProduced.increment(numProduced);
+
+        if (anomalyRecords.isEmpty()) {
+            return;
+        }
+
+        val anomaly0 = anomalyRecords.iterator().next().value();
+        val timestamp = anomaly0.getMetricData().getTimestamp() * 1000L;
+        val timeDelay = System.currentTimeMillis() - timestamp;
+        log.trace("timeDelay={}", timeDelay);
+//        delayTimer.record(Duration.ofMillis(timeDelay));
+    }
+
+    private ProducerRecord<String, MetricData> toMetricDataRecord(
+            ConsumerRecord<String, MappedMetricData> anomalyRecord) {
+
+        assert (anomalyRecord != null);
+
+        val mmd = anomalyRecord.value();
+        val metricData = mmd.getMetricData();
+        val timestampMillis = metricData.getTimestamp() * 1000L;
+
+        val newMetricData = mapper.toMetricData(mmd);
+        if (newMetricData == null) {
+            return null;
+        }
+
+        val newMetricDef = newMetricData.getMetricDefinition();
+        val newMetricId = getMetricId(newMetricDef);
+        if (newMetricId == null) {
+            return null;
+        }
+
+        log.info("produced={}", newMetricData);
+        return new ProducerRecord<>(metricTopic, null, timestampMillis, newMetricId, newMetricData);
+    }
+
+    private String getMetricId(MetricDefinition metricDef) {
+        // Calling metricTankIdFactory.getId() fails when the metric definition contains tags having values that are
+        // null or empty, or contain semicolons. We do see this in production. Hence this check. Would be better though
+        // if we can limit or eliminate such metric definitions since we'd like to avoid unnecessary exceptions.
+        try {
+            return metricTankIdFactory.getId(metricDef);
+        } catch (IllegalArgumentException e) {
+            log.warn("IllegalArgumentException: message={}, newMetricDef={}", e.getMessage(), metricDef);
+            return null;
+        }
     }
 }

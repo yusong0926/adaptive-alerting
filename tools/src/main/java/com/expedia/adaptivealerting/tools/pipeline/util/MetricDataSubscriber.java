@@ -19,10 +19,8 @@ import com.expedia.metrics.MetricData;
 
 /**
  * Interface for processors that subscribe to a metric data channel.
- *
- * @author Willie Wheeler
  */
 public interface MetricDataSubscriber {
-    
+
     void next(MetricData metricData);
 }

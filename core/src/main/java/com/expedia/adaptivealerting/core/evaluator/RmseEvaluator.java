@@ -17,9 +17,6 @@ package com.expedia.adaptivealerting.core.evaluator;
 
 /**
  * Calculates Root-mean-squared error. https://en.wikipedia.org/wiki/Root-mean-square_deviation.
- * 
- * @author kashah
- *
  */
 public class RmseEvaluator implements Evaluator {
 
@@ -28,7 +25,6 @@ public class RmseEvaluator implements Evaluator {
 
     /**
      * Creates a new RmseEvaluator. Initial n and residual sum of squares values are set to 0.
-     * 
      */
     public RmseEvaluator() {
         reset();

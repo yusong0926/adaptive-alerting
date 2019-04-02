@@ -15,28 +15,25 @@
  */
 package com.expedia.adaptivealerting.kafka.util;
 
-import com.expedia.adaptivealerting.anomdetect.source.DefaultDetectorSource;
-import com.expedia.adaptivealerting.anomdetect.source.DetectorSource;
-import com.expedia.adaptivealerting.anomdetect.source.TempHaystackAwareDetectorSource;
-import com.expedia.adaptivealerting.anomdetect.util.HttpClientWrapper;
-import com.expedia.adaptivealerting.anomdetect.util.ModelServiceConnector;
+import com.expedia.adaptivealerting.anomdetect.comp.DefaultDetectorSource;
+import com.expedia.adaptivealerting.anomdetect.comp.DetectorSource;
+import com.expedia.adaptivealerting.anomdetect.comp.connector.HttpClientWrapper;
+import com.expedia.adaptivealerting.anomdetect.comp.connector.ModelServiceConnector;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.typesafe.config.Config;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
 /**
  * Detector utilities.
- *
- * @author Willie Wheeler
  */
 @Slf4j
 public final class DetectorUtil {
-    private static final String CK_MODEL_SERVICE_URI_TEMPLATE = "model-service-uri-template";
-    
+    private static final String CK_MODEL_SERVICE_URI_TEMPLATE = "model-service-base-uri";
+
     public static DetectorSource buildDetectorSource(Config config) {
-        val httpClient = new HttpClientWrapper();
         val uriTemplate = config.getString(CK_MODEL_SERVICE_URI_TEMPLATE);
-        val connector = new ModelServiceConnector(httpClient, uriTemplate);
-        return new TempHaystackAwareDetectorSource(new DefaultDetectorSource(connector));
+        val connector = new ModelServiceConnector(new HttpClientWrapper(), uriTemplate, new ObjectMapper());
+        return new DefaultDetectorSource(connector);
     }
 }

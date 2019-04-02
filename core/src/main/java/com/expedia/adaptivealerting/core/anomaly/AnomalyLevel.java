@@ -17,8 +17,6 @@ package com.expedia.adaptivealerting.core.anomaly;
 
 /**
  * Anomaly level enum.
- *
- * @author Willie Wheeler
  */
 public enum AnomalyLevel {
 
@@ -36,7 +34,7 @@ public enum AnomalyLevel {
      * Strong outlier.
      */
     STRONG,
-    
+
     /**
      * No classification because the model is warming up.
      */

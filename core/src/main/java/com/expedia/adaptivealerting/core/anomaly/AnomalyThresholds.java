@@ -18,18 +18,16 @@ package com.expedia.adaptivealerting.core.anomaly;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-import lombok.ToString;
 
 import static com.expedia.adaptivealerting.core.util.AssertUtil.isFalse;
 import static com.expedia.adaptivealerting.core.util.AssertUtil.isTrue;
 
+// TODO Rename this to IntervalForecast, but preserve "thresholds" JSON name. [WLW]
+
 /**
  * Weak and strong thresholds to support both one- and two-tailed tests.
- *
- * @author Willie Wheeler
  */
 @Data
-@ToString
 public class AnomalyThresholds {
     private Double upperStrong;
     private Double upperWeak;
@@ -40,8 +38,8 @@ public class AnomalyThresholds {
     public AnomalyThresholds(
             @JsonProperty("upperStrong") Double upperStrong,
             @JsonProperty("upperWeak") Double upperWeak,
-            @JsonProperty("lowerStrong") Double lowerStrong,
-            @JsonProperty("lowerWeak") Double lowerWeak) {
+            @JsonProperty("lowerWeak") Double lowerWeak,
+            @JsonProperty("lowerStrong") Double lowerStrong) {
 
         isFalse(upperStrong == null && upperWeak == null && lowerWeak == null && lowerStrong == null,
                 "At least one of the thresholds must be not null");
@@ -63,73 +61,5 @@ public class AnomalyThresholds {
         this.upperWeak = upperWeak;
         this.lowerStrong = lowerStrong;
         this.lowerWeak = lowerWeak;
-    }
-
-    public AnomalyLevel classify(double value) {
-        if (upperStrong != null && value >= upperStrong) {
-            return AnomalyLevel.STRONG;
-        } else if (upperWeak != null && value >= upperWeak) {
-            return AnomalyLevel.WEAK;
-        } else if (lowerStrong != null && value <= lowerStrong) {
-            return AnomalyLevel.STRONG;
-        } else if (lowerWeak != null && value <= lowerWeak) {
-            return AnomalyLevel.WEAK;
-        } else {
-            return AnomalyLevel.NORMAL;
-        }
-    }
-
-    //Method to classify values for detectors which use tails. [KS]
-    public AnomalyLevel classify(AnomalyType type, double value) {
-        switch (type) {
-            case LEFT_TAILED:
-                if (lowerStrong != null && value <= lowerStrong) {
-                    return AnomalyLevel.STRONG;
-                } else if (lowerWeak != null && value <= lowerWeak) {
-                    return AnomalyLevel.WEAK;
-                } else {
-                    return AnomalyLevel.NORMAL;
-                }
-            case RIGHT_TAILED:
-                if (upperStrong != null && value >= upperStrong) {
-                    return AnomalyLevel.STRONG;
-                } else if (upperWeak != null && value >= upperWeak) {
-                    return AnomalyLevel.WEAK;
-                } else {
-                    return AnomalyLevel.NORMAL;
-                }
-            case TWO_TAILED:
-                if ((upperStrong != null && value >= upperStrong) || (lowerStrong != null && value <= lowerStrong)) {
-                    return AnomalyLevel.STRONG;
-                } else if ((upperWeak != null && value >= upperWeak) || (lowerWeak != null && value <= lowerWeak)) {
-                    return AnomalyLevel.WEAK;
-                } else {
-                    return AnomalyLevel.NORMAL;
-                }
-            default:
-                throw new IllegalStateException("Illegal type: " + type);
-        }
-    }
-
-    /**
-     * Legacy classification to handle exclusive bounds, since some of the detectors were using this previously, and
-     * hence have unit tests that expect it.
-     *
-     * @param value Value to classify.
-     * @return Anomaly classification.
-     */
-    @Deprecated
-    public AnomalyLevel classifyExclusiveBounds(double value) {
-        if (upperStrong != null && value > upperStrong) {
-            return AnomalyLevel.STRONG;
-        } else if (upperWeak != null && value > upperWeak) {
-            return AnomalyLevel.WEAK;
-        } else if (lowerStrong != null && value < lowerStrong) {
-            return AnomalyLevel.STRONG;
-        } else if (lowerWeak != null && value < lowerWeak) {
-            return AnomalyLevel.WEAK;
-        } else {
-            return AnomalyLevel.NORMAL;
-        }
     }
 }

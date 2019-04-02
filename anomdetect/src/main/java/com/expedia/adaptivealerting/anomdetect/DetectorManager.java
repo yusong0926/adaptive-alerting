@@ -15,39 +15,66 @@
  */
 package com.expedia.adaptivealerting.anomdetect;
 
-import com.expedia.adaptivealerting.anomdetect.source.DetectorSource;
-import com.expedia.adaptivealerting.anomdetect.util.DetectorMeta;
+import com.expedia.adaptivealerting.anomdetect.comp.DetectorSource;
+import com.expedia.adaptivealerting.anomdetect.detector.Detector;
 import com.expedia.adaptivealerting.core.anomaly.AnomalyResult;
 import com.expedia.adaptivealerting.core.data.MappedMetricData;
+import com.typesafe.config.Config;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import lombok.var;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static com.expedia.adaptivealerting.core.util.AssertUtil.notNull;
 
 /**
  * Component that manages a given set of anomaly detectors.
- *
- * @author David Sutherland
- * @author Willie Wheeler
  */
 @RequiredArgsConstructor
 @Slf4j
 public class DetectorManager {
-    
+    private static final String CK_DETECTOR_REFRESH_PERIOD = "detector-refresh-period";
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
     @Getter
     @NonNull
     private DetectorSource detectorSource;
-    
-    private final Map<UUID, AnomalyDetector> cachedDetectors = new HashMap<>();
-    
+
+    private int detectorRefreshTimePeriod;
+
+    // TODO Consider making this an explicit class so we can mock it and verify interactions
+    //  against it. [WLW]
+    private final Map<UUID, Detector> cachedDetectors = new HashMap<>();
+
+    public DetectorManager(DetectorSource detectorSource, Config config) {
+        this.detectorSource = detectorSource;
+        this.detectorRefreshTimePeriod = config.getInt(CK_DETECTOR_REFRESH_PERIOD);
+        this.initScheduler();
+    }
+
+    private void initScheduler() {
+        scheduler.scheduleWithFixedDelay(() -> {
+            try {
+                log.trace("Refreshing detectors");
+                this.detectorMapRefresh();
+            } catch (Exception e) {
+                log.error("Error refreshing detectors", e);
+            }
+        }, 1, detectorRefreshTimePeriod, TimeUnit.MINUTES);
+    }
+
     /**
      * Returns the managed detector types.
      *
@@ -56,7 +83,18 @@ public class DetectorManager {
     public Set<String> getDetectorTypes() {
         return detectorSource.findDetectorTypes();
     }
-    
+
+    /**
+     * Indicates whether this manager manages detectors of the given type.
+     *
+     * @param detectorType Detector type.
+     * @return Boolean indicating whether this manager manages detectors of the given type.
+     */
+    public boolean hasDetectorType(String detectorType) {
+        notNull(detectorType, "detectorType can't be null");
+        return getDetectorTypes().contains(detectorType);
+    }
+
     /**
      * Classifies the mapped metric data, performing detector lookup behind the scenes. Returns {@code null} if there's
      * no detector defined for the given mapped metric data.
@@ -66,31 +104,44 @@ public class DetectorManager {
      */
     public AnomalyResult classify(MappedMetricData mappedMetricData) {
         notNull(mappedMetricData, "mappedMetricData can't be null");
-        
+
         val detector = detectorFor(mappedMetricData);
         if (detector == null) {
-            log.warn("No detector: mappedMetricData={}", mappedMetricData);
+            log.warn("No detector for mappedMetricData={}", mappedMetricData);
             return null;
         }
         val metricData = mappedMetricData.getMetricData();
-        val anomalyResult = detector.classify(metricData);
-        log.info("metricData={}, anomalyResult={}", metricData, anomalyResult);
-        return anomalyResult;
+        return detector.classify(metricData);
     }
-    
-    private AnomalyDetector detectorFor(MappedMetricData mappedMetricData) {
+
+    private Detector detectorFor(MappedMetricData mappedMetricData) {
         notNull(mappedMetricData, "mappedMetricData can't be null");
-        
+
         val detectorUuid = mappedMetricData.getDetectorUuid();
-        val detectorType = mappedMetricData.getDetectorType();
-        val metricDef = mappedMetricData.getMetricData().getMetricDefinition();
-        
-        AnomalyDetector detector = cachedDetectors.get(detectorUuid);
+        var detector = cachedDetectors.get(detectorUuid);
         if (detector == null) {
-            val detectorMeta = new DetectorMeta(detectorUuid, detectorType);
-            detector = detectorSource.findDetector(detectorMeta, metricDef);
+            detector = detectorSource.findDetector(detectorUuid);
             cachedDetectors.put(detectorUuid, detector);
+        } else {
+            log.trace("Got cached detector");
         }
         return detector;
+    }
+
+    /**
+     * Remove detectors from cache that have been modified in last `timePeriod` minutes.
+     * The deleted detectors will be cleaned up and the detectors modified will be reloaded
+     * when corresponding mapped-metric comes in.
+     */
+    List<UUID> detectorMapRefresh() {
+
+        var updatedDetectors = new ArrayList<UUID>();
+        detectorSource.findUpdatedDetectors(detectorRefreshTimePeriod).forEach(key -> {
+            updatedDetectors.add(key);
+            cachedDetectors.remove(key);
+        });
+
+        log.info("Removed detectors on refresh : {}",updatedDetectors);
+        return updatedDetectors;
     }
 }

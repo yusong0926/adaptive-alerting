@@ -18,27 +18,20 @@ package com.expedia.adaptivealerting.modelservice.entity;
 import com.expedia.adaptivealerting.modelservice.util.JpaConverterJson;
 import lombok.Data;
 
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.util.Map;
 
 /**
  * Metric entity.
- *
- * @author kashah
  */
 @Data
 @Entity
 public class Metric {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(name = "ukey")
     private String key;
 

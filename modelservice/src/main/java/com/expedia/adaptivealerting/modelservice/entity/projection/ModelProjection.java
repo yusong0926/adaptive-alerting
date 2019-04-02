@@ -23,10 +23,7 @@ import org.springframework.data.rest.core.config.Projection;
 import java.sql.Timestamp;
 import java.util.Map;
 
-/**
- * @author shsethi
- */
-@Projection(name="modelWithDetectorType", types = Model.class)
+@Projection(name = "modelWithDetectorType", types = Model.class)
 public interface ModelProjection {
 
     Long getId();
@@ -38,10 +35,6 @@ public interface ModelProjection {
     String getUuid();
 
     Map<String, Object> getParams();
-
-    Double getWeakSigmas();
-
-    Double getStrongSigmas();
 
     Timestamp getDateCreated();
 }

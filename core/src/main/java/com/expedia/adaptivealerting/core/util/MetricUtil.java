@@ -15,17 +15,14 @@
  */
 package com.expedia.adaptivealerting.core.util;
 
-import com.expedia.adaptivealerting.core.data.MetricFrame;
 import com.expedia.metrics.MetricData;
 import com.expedia.metrics.MetricDefinition;
 import com.expedia.metrics.TagCollection;
 import lombok.val;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,32 +30,26 @@ import static com.expedia.adaptivealerting.core.util.AssertUtil.notNull;
 
 /**
  * Metric utilities.
- *
- * @author Willie Wheeler
  */
 public final class MetricUtil {
-    
+
     /**
      * Prevent instantiation.
      */
     private MetricUtil() {
     }
-    
+
     public static Map<String, String> defaultKvTags() {
         val kvTags = new HashMap<String, String>();
         kvTags.put(MetricDefinition.UNIT, "");
         kvTags.put(MetricDefinition.MTYPE, "gauge");
         return kvTags;
     }
-    
+
     public static Set<String> defaultVTags() {
         return new HashSet<>();
     }
-    
-    public static MetricDefinition metricDefinition() {
-        return new MetricDefinition(null, null);
-    }
-    
+
     /**
      * Convenience method to create a new metric definition from the given tags. Provides defaults for null values.
      *
@@ -75,14 +66,12 @@ public final class MetricUtil {
         }
         return new MetricDefinition(new TagCollection(kvTags, vTags));
     }
-    
+
     public static MetricData metricData(MetricDefinition metricDef) {
-        if (metricDef == null) {
-            metricDef = metricDefinition();
-        }
+        notNull(metricDef, "metricDef can't be null");
         return metricData(metricDef, 0.0);
     }
-    
+
     /**
      * Convenience method to create a new {@link MetricData} from the given definition and value. Sets the timestamp to
      * the current epoch second.
@@ -93,21 +82,5 @@ public final class MetricUtil {
      */
     public static MetricData metricData(MetricDefinition metricDef, double value) {
         return new MetricData(metricDef, value, Instant.now().getEpochSecond());
-    }
-    
-    public static MetricFrame merge(List<MetricFrame> frames) {
-        notNull(frames, "frames can't be null");
-        
-        int totalSize = 0;
-        for (final MetricFrame frame : frames) {
-            totalSize += frame.getNumRows();
-        }
-        
-        final List<MetricData> resultList = new ArrayList<>(totalSize);
-        for (final MetricFrame frame : frames) {
-            resultList.addAll(frame.getMetricData());
-        }
-        
-        return new MetricFrame(resultList);
     }
 }

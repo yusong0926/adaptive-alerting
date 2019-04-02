@@ -15,12 +15,12 @@
  */
 package com.expedia.adaptivealerting.kafka.util;
 
+import com.expedia.adaptivealerting.anomdetect.AnomalyToMetricMapper;
 import com.expedia.adaptivealerting.core.anomaly.AnomalyLevel;
 import com.expedia.adaptivealerting.core.anomaly.AnomalyResult;
 import com.expedia.adaptivealerting.core.data.MappedMetricData;
-import com.expedia.adaptivealerting.kafka.serde.JsonPojoDeserializer;
-import com.expedia.adaptivealerting.kafka.serde.JsonPojoSerde;
-import com.expedia.adaptivealerting.kafka.serde.JsonPojoSerializer;
+import com.expedia.adaptivealerting.kafka.serde.MappedMetricDataJsonSerde;
+import com.expedia.adaptivealerting.kafka.serde.MetricDataJsonSerde;
 import com.expedia.alertmanager.model.Alert;
 import com.expedia.metrics.MetricData;
 import com.expedia.metrics.MetricDefinition;
@@ -35,7 +35,6 @@ import org.apache.kafka.streams.errors.LogAndContinueExceptionHandler;
 import org.apache.kafka.streams.test.ConsumerRecordFactory;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.UUID;
@@ -48,17 +47,15 @@ import java.util.UUID;
  * Fine to use this for a small number of objects. If this class gets too big then we would want to switch to the
  * builder pattern.
  * </p>
- *
- * @author Willie Wheeler
  */
 public final class TestObjectMother {
-    
+
     /**
      * Prevent instantiation.
      */
     private TestObjectMother() {
     }
-    
+
     /**
      * Returns a set of metric tags, valid for Metrictank.
      *
@@ -66,129 +63,170 @@ public final class TestObjectMother {
      */
     public static TagCollection metricTags() {
         val tags = new HashMap<String, String>();
-        
+
         // Metrics 2.0
         tags.put("mtype", "gauge");
         tags.put("unit", "");
-        
+
         // Metrictank
         tags.put("org_id", "1");
         tags.put("interval", "1");
-        
+
         return new TagCollection(tags);
     }
-    
+
+    public static TagCollection metricTagsWithAADetectorUuid() {
+        val tags = new HashMap<String, String>();
+        tags.put("mtype", "gauge");
+        tags.put("unit", "");
+        tags.put("org_id", "1");
+        tags.put("interval", "1");
+        tags.put(AnomalyToMetricMapper.AA_DETECTOR_UUID, UUID.randomUUID().toString());
+        return new TagCollection(tags);
+    }
+
+    public static TagCollection metricTagsWithNullTagValue() {
+        val tags = new HashMap<String, String>();
+        tags.put("mtype", "gauge");
+        tags.put("unit", "");
+        tags.put("org_id", "1");
+        tags.put("interval", "1");
+        tags.put("some-tag-key", null);
+        return new TagCollection(tags);
+    }
+
     public static TagCollection metricMeta() {
         val meta = new HashMap<String, String>();
         return new TagCollection(meta);
     }
-    
+
+    /**
+     * Returns a metric data with value 100.0 and timestamp = now.
+     *
+     * @return metric data
+     */
     public static MetricData metricData() {
-        val metricDefinition = new MetricDefinition("some-metric-key", metricTags(), metricMeta());
-        val now = Instant.now().getEpochSecond();
-        return new MetricData(metricDefinition, 100.0, now);
+        return metricData(100.0);
     }
-    
+
+    /**
+     * Returns a metric data with the given value and timestamp = now.
+     *
+     * @param value a value for the metric data
+     * @return metric data
+     */
+    public static MetricData metricData(double value) {
+        val metricDef = new MetricDefinition("some-metric-key", metricTags(), metricMeta());
+        return metricData(metricDef, value);
+    }
+
+    public static MetricData metricData(MetricDefinition metricDef, double value) {
+        val now = Instant.now().getEpochSecond();
+        return new MetricData(metricDef, value, now);
+    }
+
+    /**
+     * Returns a mapped metric data with the following characteristics:
+     *
+     * <ul>
+     * <li>metricData.value = 100.0</li>
+     * <li>detectorUuid = random</li>
+     * <li>detectorType = "constant-detector"</li>
+     * <li>anomalyResult = null</li>
+     * </ul>
+     *
+     * @return Mapped metric data
+     */
     public static MappedMetricData mappedMetricData() {
         return mappedMetricData(metricData());
     }
-    
+
     public static MappedMetricData mappedMetricData(MetricData metricData) {
-        return new MappedMetricData(metricData, UUID.randomUUID(), "some-detector-type");
+        return new MappedMetricData(metricData, UUID.randomUUID());
     }
-    
+
     public static MappedMetricData mappedMetricDataWithAnomalyResult() {
-        val metricData = metricData();
+        return mappedMetricDataWithAnomalyResult(metricData());
+    }
+
+    public static MappedMetricData mappedMetricDataWithAnomalyResult(MetricData metricData) {
         val mmd = mappedMetricData(metricData);
-        mmd.setAnomalyResult(anomalyResult(metricData));
+        mmd.setAnomalyResult(new AnomalyResult(AnomalyLevel.STRONG));
         return mmd;
     }
-    
-    public static AnomalyResult anomalyResult() {
-        return anomalyResult(metricData());
+
+    public static MappedMetricData mappedMetricData(AnomalyLevel anomalyLevel) {
+        val mmd = mappedMetricData();
+        mmd.setAnomalyResult(new AnomalyResult(anomalyLevel));
+        return mmd;
     }
-    
-    public static AnomalyResult anomalyResult(MetricData metricData) {
-        val anomalyResult = new AnomalyResult();
-        anomalyResult.setDetectorUUID(UUID.randomUUID());
-        anomalyResult.setMetricData(metricData);
-        anomalyResult.setAnomalyLevel(AnomalyLevel.STRONG);
-        return anomalyResult;
+
+    public static MappedMetricData mappedMetricDataWithAnomalyResultAndAADetectorUuid() {
+        val tags = metricTagsWithAADetectorUuid();
+        val metricDef = new MetricDefinition("some-metric-key", tags, TagCollection.EMPTY);
+        val metricData = metricData(metricDef, 100.0);
+        return mappedMetricDataWithAnomalyResult(metricData);
+    }
+
+    public static MappedMetricData mappedMetricDataWithAnomalyResultAndNullTagValue() {
+        val tags = metricTagsWithNullTagValue();
+        val metricDef = new MetricDefinition("some-metric-key", tags, TagCollection.EMPTY);
+        val metricData = metricData(metricDef, 100.0);
+        return mappedMetricDataWithAnomalyResult(metricData);
     }
 
     public static Alert alert() {
         val alert = new Alert();
-        long timestamp = System.currentTimeMillis();
         alert.setName("some-metric-key");
-        HashMap<String,String> annotations = new HashMap<>();
-        annotations.put("value","100.0");
-        annotations.put("timestamp", String.valueOf(timestamp/1000));
-        HashMap<String,String> label = new HashMap<>();
-        label.put("metric_key", "some-metric-key"); //Please Note: metric key can override a tag if it has the same name.
-        label.put("mtype", "gauge");
-        label.put("unit","");
-        label.put("org_id", "1");
-        label.put("interval","1");
-        label.put("anomalyLevel","STRONG");
-        alert.setLabels(label);
+
+        val labels = new HashMap<String, String>();
+        // Note: metric key can override a tag if it has the same name.
+        labels.put("metric_key", "some-metric-key");
+        labels.put("mtype", "gauge");
+        labels.put("unit", "");
+        labels.put("org_id", "1");
+        labels.put("interval", "1");
+        labels.put("anomalyLevel", "STRONG");
+        alert.setLabels(labels);
+
+        val annotations = new HashMap<String, String>();
+        annotations.put("value", "100.0");
+        annotations.put("timestamp", String.valueOf(System.currentTimeMillis() / 1000));
         alert.setAnnotations(annotations);
+
         return alert;
     }
-    
+
     public static TopologyTestDriver topologyTestDriver(
             Topology topology,
-            Class<?> jsonPojoDeserializerClass,
+            Class<?> valueSerdeClass,
             boolean continueOnDeserException) {
-        
+
         val props = new Properties();
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "test");
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "dummy:1234");
-        props.setProperty(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
-        props.setProperty(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, JsonPojoSerde.class.getName());
-        props.setProperty(JsonPojoDeserializer.CK_JSON_POJO_CLASS, jsonPojoDeserializerClass.getName());
-        
+        props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
+        props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, valueSerdeClass.getName());
+
         if (continueOnDeserException) {
-            props.setProperty(
+            props.put(
                     StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
                     LogAndContinueExceptionHandler.class.getName());
         }
+
         return new TopologyTestDriver(topology, props);
     }
-    
+
     public static ConsumerRecordFactory<String, String> stringFactory() {
         val stringSerializer = new StringSerializer();
         return new ConsumerRecordFactory<>(stringSerializer, stringSerializer);
     }
-    
+
     public static ConsumerRecordFactory<String, MetricData> metricDataFactory() {
-        return new ConsumerRecordFactory<>(new StringSerializer(), new JsonPojoSerializer<>());
+        return new ConsumerRecordFactory<>(new StringSerializer(), new MetricDataJsonSerde.Ser());
     }
-    
+
     public static ConsumerRecordFactory<String, MappedMetricData> mappedMetricDataFactory() {
-        return new ConsumerRecordFactory<>(new StringSerializer(), new JsonPojoSerializer<>());
-    }
-
-    public static JsonPojoDeserializer<MappedMetricData> mappedMetricDataDeserializer() {
-        val deserializer = new JsonPojoDeserializer<MappedMetricData>();
-        deserializer.configure(
-                Collections.singletonMap(JsonPojoDeserializer.CK_JSON_POJO_CLASS, MappedMetricData.class),
-                false);
-        return deserializer;
-    }
-    
-    public static JsonPojoDeserializer<AnomalyResult> anomalyResultDeserializer() {
-        val deserializer = new JsonPojoDeserializer<AnomalyResult>();
-        deserializer.configure(
-                Collections.singletonMap(JsonPojoDeserializer.CK_JSON_POJO_CLASS, AnomalyResult.class),
-                false);
-        return deserializer;
-    }
-
-    public static JsonPojoDeserializer<Alert> alertDeserializer() {
-        val deserializer = new JsonPojoDeserializer<Alert>();
-        deserializer.configure(
-                Collections.singletonMap(JsonPojoDeserializer.CK_JSON_POJO_CLASS, Alert.class),
-                false);
-        return deserializer;
+        return new ConsumerRecordFactory<>(new StringSerializer(), new MappedMetricDataJsonSerde.Ser());
     }
 }

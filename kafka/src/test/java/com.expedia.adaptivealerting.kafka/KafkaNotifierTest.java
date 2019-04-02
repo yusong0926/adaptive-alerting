@@ -23,7 +23,6 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.assertj.core.api.Assertions;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,33 +38,30 @@ import static com.expedia.adaptivealerting.kafka.util.TestHelper.newMappedMetric
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(
-    classes = {
-        KafkaNotifier.class,
-        KafkaNotifierTest.ServiceDependencies.class
-    },
-    webEnvironment = SpringBootTest.WebEnvironment.MOCK,
-    properties = { // Set the only required properties
-        "kafka.consumer.bootstrap.servers=${bootstrap.servers}",
-        "webhook.url=http://localhost:${webhook.port}/hook"
-    }
+        classes = {
+                KafkaNotifier.class,
+                KafkaNotifierTest.ServiceDependencies.class
+        },
+        webEnvironment = SpringBootTest.WebEnvironment.MOCK,
+        properties = { // Set the only required properties
+                "kafka.consumer.bootstrap.servers=${bootstrap.servers}",
+                "webhook.url=http://localhost:${webhook.port}/hook"
+        }
 )
 @ContextConfiguration(initializers = {
-    KafkaNotifierTest.ServiceDependencies.class
+        KafkaNotifierTest.ServiceDependencies.class
 })
 
-// FIXME Temporarily ignoring because we're seeing an interaction between this test and the
-// KafkaMultiClusterAnomalyToMetricMapperTest. I think it's because we're setting system
-// properties. [WLW]
-@Ignore
 public class KafkaNotifierTest {
 
     @ClassRule
     public static KafkaJunitRule kafka = new KafkaJunitRule(EphemeralKafkaBroker.create()).waitForStartup();
-    
+
     @ClassRule
     public static MockWebServer webhook = new MockWebServer();
 
-    @Autowired ObjectMapper objectMapper;
+    @Autowired
+    ObjectMapper objectMapper;
 
     @Test
     public void message_invokesWebhook() throws Exception {
@@ -79,20 +75,22 @@ public class KafkaNotifierTest {
         // Then, the notifier POSTs the json from the message into the webhook
         RecordedRequest webhookRequest = webhook.takeRequest();
         Assertions.assertThat(webhookRequest.getMethod())
-            .isEqualTo("POST");
+                .isEqualTo("POST");
         Assertions.assertThat(webhookRequest.getBody().readUtf8())
-            .isEqualTo(json);
+                .isEqualTo(json);
     }
 
-    /** This grabs ports from the junit rules and inlines properties accordingly */
+    /**
+     * This grabs ports from the junit rules and inlines properties accordingly
+     */
     static class ServiceDependencies
-        implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+            implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
         @Override
         public void initialize(ConfigurableApplicationContext applicationContext) {
             TestPropertySourceUtils.addInlinedPropertiesToEnvironment(applicationContext,
-                "bootstrap.servers=" + bootstrapServers(kafka),
-                "webhook.port=" + webhook.getPort()
+                    "bootstrap.servers=" + bootstrapServers(kafka),
+                    "webhook.port=" + webhook.getPort()
             );
         }
     }

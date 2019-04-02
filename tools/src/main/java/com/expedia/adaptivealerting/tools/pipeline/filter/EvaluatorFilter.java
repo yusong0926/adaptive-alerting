@@ -15,11 +15,12 @@
  */
 package com.expedia.adaptivealerting.tools.pipeline.filter;
 
-import com.expedia.adaptivealerting.core.anomaly.AnomalyResult;
+import com.expedia.adaptivealerting.core.data.MappedMetricData;
 import com.expedia.adaptivealerting.core.evaluator.Evaluator;
 import com.expedia.adaptivealerting.core.evaluator.ModelEvaluation;
 import com.expedia.adaptivealerting.tools.pipeline.util.AnomalyResultSubscriber;
 import com.expedia.adaptivealerting.tools.pipeline.util.ModelEvaluationSubscriber;
+import lombok.val;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -28,39 +29,38 @@ import static com.expedia.adaptivealerting.core.util.AssertUtil.notNull;
 
 /**
  * Stream filter that applies model evaluator to metrics and publishes the score.
- *
- * @author kashah
  */
 public final class EvaluatorFilter implements AnomalyResultSubscriber {
     private final Evaluator evaluator;
     private final List<ModelEvaluationSubscriber> subscribers = new LinkedList<>();
-    
+
     public EvaluatorFilter(Evaluator evaluator) {
         notNull(evaluator, "evaluator can't be null");
         this.evaluator = evaluator;
     }
-    
+
     @Override
-    public void next(AnomalyResult anomalyResult) {
-        notNull(anomalyResult, "anomalyResult can't be null");
+    public void next(MappedMetricData anomaly) {
+        notNull(anomaly, "anomaly can't be null");
         // getPredicted() can return null during warm up; convert null to 0
-        evaluator.update(anomalyResult.getMetricData().getValue(), getPredicted(anomalyResult));
+        evaluator.update(anomaly.getMetricData().getValue(), getPredicted(anomaly));
         publish(evaluator.evaluate());
     }
-    
+
     public void addSubscriber(ModelEvaluationSubscriber subscriber) {
         notNull(subscriber, "subscriber can't be null");
         subscribers.add(subscriber);
     }
-    
+
     public void removeSubscriber(ModelEvaluationSubscriber subscriber) {
         notNull(subscriber, "subscriber can't be null");
         subscribers.remove(subscriber);
     }
-    
-    private Double getPredicted(AnomalyResult anomalyResult) {
+
+    private Double getPredicted(MappedMetricData anomaly) {
         // getPredicted() can return null during warm up; convert null to 0
-        return (anomalyResult.getPredicted() == null ? 0 : anomalyResult.getPredicted());
+        val anomalyResult = anomaly.getAnomalyResult();
+        return (anomalyResult.getPredicted() == null ? 0.0 : anomalyResult.getPredicted());
     }
 
     private void publish(ModelEvaluation modelEvaluation) {

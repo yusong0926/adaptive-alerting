@@ -15,38 +15,25 @@
  */
 package com.expedia.adaptivealerting.core.util;
 
-import static com.expedia.adaptivealerting.core.util.AssertUtil.notNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Reflection utilities.
- *
- * @author Willie Wheeler
  */
+@Slf4j
 public final class ReflectionUtil {
-    
+
     /**
      * Prevent instantiation.
      */
     private ReflectionUtil() {
     }
-    
-    public static Class classForName(String className) {
-        try {
-            return Class.forName(className);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    
-    public static Object newInstance(String className) {
-        notNull(className, "className can't be null");
-        return newInstance(classForName(className));
-    }
-    
+
     public static <T> T newInstance(Class<T> clazz) {
         try {
             return clazz.newInstance();
         } catch (InstantiationException | IllegalAccessException e) {
+            log.error("Error instantiating " + clazz.getName(), e);
             throw new RuntimeException(e);
         }
     }

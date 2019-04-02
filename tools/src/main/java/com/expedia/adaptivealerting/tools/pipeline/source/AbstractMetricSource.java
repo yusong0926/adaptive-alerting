@@ -17,6 +17,7 @@ package com.expedia.adaptivealerting.tools.pipeline.source;
 
 import com.expedia.adaptivealerting.tools.pipeline.util.MetricDataSubscriber;
 import com.expedia.metrics.MetricData;
+import lombok.val;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -28,16 +29,13 @@ import static com.expedia.adaptivealerting.core.util.AssertUtil.notNull;
 
 /**
  * Abstract base class for implementing metric sources. Uses a timer to simulate timing behavior.
- *
- * @author Willie Wheeler
  */
 public abstract class AbstractMetricSource implements MetricSource {
-//    private final MetricDefinition metricDefinition;
     private final long periodMs;
     private final List<MetricDataSubscriber> subscribers = new LinkedList<>();
-    
+
     private final Timer timer = new Timer();
-    
+
     /**
      * Creates a new metric source with the given period.
      *
@@ -48,48 +46,42 @@ public abstract class AbstractMetricSource implements MetricSource {
     public AbstractMetricSource(String metricKey, long periodMs) {
         notNull(metricKey, "metricKey can't be null");
         isTrue(periodMs > 0, "periodMs must be > 0");
-        
-//        this.metricDefinition = new MetricDefinition(metricKey);
+
         this.periodMs = periodMs;
     }
-    
-//    @Override
-//    public MetricDefinition getMetricDefinition() {
-//        return metricDefinition;
-//    }
-    
+
     @Override
     public void start() {
         timer.scheduleAtFixedRate(new TimerTask() {
-            
+
             @Override
             public void run() {
-                final MetricData next = next();
+                val next = next();
                 if (next != null) {
                     publish(next);
                 }
             }
         }, 0L, periodMs);
     }
-    
+
     @Override
     public void stop() {
         timer.cancel();
         timer.purge();
     }
-    
+
     @Override
     public void addSubscriber(MetricDataSubscriber subscriber) {
         notNull(subscriber, "subscriber can't be null");
         subscribers.add(subscriber);
     }
-    
+
     @Override
     public void removeSubscriber(MetricDataSubscriber subscriber) {
         notNull(subscriber, "subscriber can't be null");
         subscribers.remove(subscriber);
     }
-    
+
     private void publish(MetricData metricData) {
         subscribers.stream().forEach(subscriber -> subscriber.next(metricData));
     }

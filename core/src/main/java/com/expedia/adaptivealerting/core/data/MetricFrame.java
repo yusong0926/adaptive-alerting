@@ -16,7 +16,7 @@
 package com.expedia.adaptivealerting.core.data;
 
 import com.expedia.metrics.MetricData;
-import java.util.ArrayList;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
@@ -26,16 +26,10 @@ import static com.expedia.adaptivealerting.core.util.AssertUtil.notNull;
 
 /**
  * Data frame for time series metric data.
- *
- * @author Willie Wheeler
  */
 public class MetricFrame {
     private final List<MetricData> metricDataPoints;
-    
-    public MetricFrame() {
-        this.metricDataPoints = new ArrayList<>();
-    }
-    
+
     /**
      * Creates a new metric frame from an array of {@link MetricData}s.
      *
@@ -45,12 +39,7 @@ public class MetricFrame {
         notNull(metricDataPoints, "metricData can't be null");
         this.metricDataPoints = Arrays.asList(metricDataPoints);
     }
-    
-    public MetricFrame(List<MetricData> metricDataPoints) {
-        notNull(metricDataPoints, "metricDataPoints can't be null");
-        this.metricDataPoints = metricDataPoints;
-    }
-    
+
     /**
      * Returns the number of metric points in the frame.
      *
@@ -59,7 +48,7 @@ public class MetricFrame {
     public int getNumRows() {
         return metricDataPoints.size();
     }
-    
+
     /**
      * Returns the {@link MetricData} at the given row index.
      *
@@ -70,11 +59,11 @@ public class MetricFrame {
         isTrue(index >= 0, "Required: index >= 0");
         return metricDataPoints.get(index);
     }
-    
+
     public List<MetricData> getMetricData() {
         return metricDataPoints;
     }
-    
+
     /**
      * Returns a list iterator for this frame. Intended to support data streaming.
      *
@@ -82,14 +71,5 @@ public class MetricFrame {
      */
     public ListIterator<MetricData> listIterator() {
         return metricDataPoints.listIterator();
-    }
-    
-    public double[] toDoubleValues() {
-        final int n = getNumRows();
-        final double[] values = new double[n];
-        for (int i = 0; i < n; i++) {
-            values[i] = getMetricDataPoint(i).getValue();
-        }
-        return values;
     }
 }

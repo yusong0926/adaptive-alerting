@@ -15,28 +15,86 @@
  */
 package com.expedia.adaptivealerting.core.anomaly;
 
+import lombok.val;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * @author Willie Wheeler
- */
 public class AnomalyThresholdsTest {
-    
+    private static final double TOLERANCE = 0.001;
+
     @Test
-    public void testUpperThresholds() {
-        final AnomalyThresholds thresholds = new AnomalyThresholds(100.0, 50.0, null, null);
-        assertEquals(AnomalyLevel.STRONG, thresholds.classify(150.0));
-        assertEquals(AnomalyLevel.WEAK, thresholds.classify(75.0));
-        assertEquals(AnomalyLevel.NORMAL, thresholds.classify(25.0));
+    public void testConstructor_happyPath() {
+        val thresholds = new AnomalyThresholds(100.0, 90.0, 20.0, 10.0);
+
+        assertEquals(100.0, thresholds.getUpperStrong(), TOLERANCE);
+        assertEquals(90.0, thresholds.getUpperWeak(), TOLERANCE);
+        assertEquals(20.0, thresholds.getLowerWeak(), TOLERANCE);
+        assertEquals(10.0, thresholds.getLowerStrong(), TOLERANCE);
+
+        thresholds.setUpperStrong(200.0);
+        thresholds.setUpperWeak(180.0);
+        thresholds.setLowerWeak(40.0);
+        thresholds.setLowerStrong(20.0);
+
+        assertEquals(200.0, thresholds.getUpperStrong(), TOLERANCE);
+        assertEquals(180.0, thresholds.getUpperWeak(), TOLERANCE);
+        assertEquals(40.0, thresholds.getLowerWeak(), TOLERANCE);
+        assertEquals(20.0, thresholds.getLowerStrong(), TOLERANCE);
     }
-    
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructor_allThresholdsNull() {
+        new AnomalyThresholds(null, null, null, null);
+    }
+
     @Test
-    public void testLowerThresholds() {
-        final AnomalyThresholds thresholds = new AnomalyThresholds(null, null, 25.0, 50.0);
-        assertEquals(AnomalyLevel.STRONG, thresholds.classify(0.0));
-        assertEquals(AnomalyLevel.WEAK, thresholds.classify(35.0));
-        assertEquals(AnomalyLevel.NORMAL, thresholds.classify(100.0));
+    public void testConstructor_upperStrongOnly() {
+        new AnomalyThresholds(100.0, null, null, null);
+    }
+
+    @Test
+    public void testConstructor_upperWeakOnly() {
+        new AnomalyThresholds(null, 100.0, null, null);
+    }
+
+    @Test
+    public void testConstructor_lowerWeakOnly() {
+        new AnomalyThresholds(null, null, 100.0, null);
+    }
+
+    @Test
+    public void testConstructor_lowerStrongOnly() {
+        new AnomalyThresholds(null, null, null, 100.0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructor_upperStrongVsUpperWeakConflict() {
+        new AnomalyThresholds(90.0, 100.0, null, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructor_upperStrongVsLowerWeakConflict() {
+        new AnomalyThresholds(90.0, null, 100.0, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructor_upperStrongVsLowerStrongConflict() {
+        new AnomalyThresholds(90.0, null, null, 100.0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructor_upperWeakVsLowerWeakConflict() {
+        new AnomalyThresholds(null, 90.0, 100.0, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructor_upperWeakVsLowerStrongConflict() {
+        new AnomalyThresholds(null, 90.0, null, 100.0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructor_lowerWeakVsLowerStrongConflict() {
+        new AnomalyThresholds(null, null, 90.0, 100.0);
     }
 }

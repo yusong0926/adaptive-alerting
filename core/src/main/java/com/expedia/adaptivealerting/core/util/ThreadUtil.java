@@ -19,15 +19,13 @@ import lombok.SneakyThrows;
 
 /**
  * Thread utilities.
- *
- * @author Willie Wheeler
  */
 public final class ThreadUtil {
-    
+
     // Prevent instantiation
     private ThreadUtil() {
     }
-    
+
     @SneakyThrows
     public static void sleep(long millis) {
         Thread.sleep(millis);

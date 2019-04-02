@@ -15,25 +15,28 @@
  */
 package com.expedia.adaptivealerting.samples;
 
-import com.expedia.adaptivealerting.anomdetect.holtwinters.HoltWintersAnomalyDetector;
-import com.expedia.adaptivealerting.anomdetect.holtwinters.HoltWintersParams;
-import com.expedia.adaptivealerting.anomdetect.holtwinters.SeasonalityType;
+import com.expedia.adaptivealerting.anomdetect.forecast.point.holtwinters.HoltWintersDetector;
+import com.expedia.adaptivealerting.anomdetect.forecast.point.holtwinters.HoltWintersParams;
+import com.expedia.adaptivealerting.anomdetect.forecast.point.holtwinters.SeasonalityType;
+import com.expedia.adaptivealerting.core.anomaly.AnomalyType;
 import com.expedia.adaptivealerting.core.evaluator.RmseEvaluator;
 import com.expedia.adaptivealerting.tools.pipeline.filter.AnomalyDetectorFilter;
 import com.expedia.adaptivealerting.tools.pipeline.filter.EvaluatorFilter;
 import com.expedia.adaptivealerting.tools.pipeline.sink.AnomalyChartSink;
 import com.expedia.adaptivealerting.tools.pipeline.source.MetricFrameMetricSource;
 import com.expedia.adaptivealerting.tools.pipeline.util.PipelineFactory;
+import lombok.val;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jfree.chart.JFreeChart;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
-import static com.expedia.adaptivealerting.anomdetect.holtwinters.HoltWintersTrainingMethod.SIMPLE;
-import static com.expedia.adaptivealerting.anomdetect.holtwinters.SeasonalityType.ADDITIVE;
-import static com.expedia.adaptivealerting.anomdetect.holtwinters.SeasonalityType.MULTIPLICATIVE;
+import static com.expedia.adaptivealerting.anomdetect.forecast.point.holtwinters.HoltWintersTrainingMethod.SIMPLE;
+import static com.expedia.adaptivealerting.anomdetect.forecast.point.holtwinters.SeasonalityType.ADDITIVE;
+import static com.expedia.adaptivealerting.anomdetect.forecast.point.holtwinters.SeasonalityType.MULTIPLICATIVE;
 import static com.expedia.adaptivealerting.samples.MetricGenerationHelper.buildMetricFrameMetricSource;
 import static com.expedia.adaptivealerting.tools.visualization.ChartUtil.createChartFrame;
 import static com.expedia.adaptivealerting.tools.visualization.ChartUtil.showChartFrame;
@@ -42,8 +45,6 @@ import static com.expedia.adaptivealerting.tools.visualization.ChartUtil.showCha
  * Data for samples/austourists.csv was taken from austourists-tests-holtwinters-multiplicative/additive.csv files in anomdetect.
  * The first row was converted to the LEVEL, BASE, and M/A_SEASONAL constants below.
  * The "y" values from the remaining rows became the "observed" values in sample/austourists.csv
- *
- * @author Matt Callanan
  */
 public class CsvTrafficHoltWintersVariants {
     public static final int PERIOD = 4;
@@ -74,8 +75,8 @@ public class CsvTrafficHoltWintersVariants {
 //        charts.add(buildChartWithInitialTrainings(source, M, ALPHA,     BETA, GAMMA,      "No Estimates").getChart());
 //        charts.add(buildChartWithoutInitEstimates(source, M, ALPHA,     BETA, GAMMA,      "No Estimates").getChart());
 
-        charts.add(buildChartWithoutInitEstimates(source, M, ALPHA_LOW, BETA, GAMMA,      "No Estimates", "Low Alpha").getChart());
-        charts.add(buildChartWithInitialTrainings(source, M, ALPHA_LOW, BETA, GAMMA,      "Low Alpha").getChart());
+        charts.add(buildChartWithoutInitEstimates(source, M, ALPHA_LOW, BETA, GAMMA, "No Estimates", "Low Alpha").getChart());
+        charts.add(buildChartWithInitialTrainings(source, M, ALPHA_LOW, BETA, GAMMA, "Low Alpha").getChart());
 
 //        charts.add(buildChartWithoutInitEstimates(source, M, ALPHA_LOW, BETA, GAMMA_HIGH, "No Estimates", "High Gamma").getChart());
 //        charts.add(buildChartWithoutInitEstimates(source, M, ALPHA_LOW, BETA, GAMMA_HIGH, "No Estimates", "Low Alpha", "High Gamma").getChart());
@@ -136,7 +137,11 @@ public class CsvTrafficHoltWintersVariants {
 
     private static AnomalyChartSink buildChart(MetricFrameMetricSource source, SeasonalityType seasonalityType, HoltWintersParams params,
                                                double alpha, double beta, double gammaLow, String... titleSuffix) {
-        final AnomalyDetectorFilter adf = new AnomalyDetectorFilter(new HoltWintersAnomalyDetector(params));
+
+        val detector = new HoltWintersDetector();
+        detector.init(UUID.randomUUID(), params, AnomalyType.TWO_TAILED);
+
+        final AnomalyDetectorFilter adf = new AnomalyDetectorFilter(detector);
         final EvaluatorFilter eval = new EvaluatorFilter(new RmseEvaluator());
         final AnomalyChartSink chartSink = PipelineFactory.createChartSink(String.format("HoltWinters %s: alpha=%s, beta=%s, gamma=%s %s", seasonalityType,
                 alpha, beta, gammaLow, Arrays.asList(titleSuffix)));

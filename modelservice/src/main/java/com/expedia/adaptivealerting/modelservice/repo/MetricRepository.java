@@ -26,9 +26,6 @@ import java.util.List;
 
 /**
  * Spring Data repository for metrics.
- *
- * @author kashah
- * @author Willie Wheeler
  */
 public interface MetricRepository extends PagingAndSortingRepository<Metric, Long> {
 
@@ -48,6 +45,13 @@ public interface MetricRepository extends PagingAndSortingRepository<Metric, Lon
      */
     Metric findByHash(@Param("hash") String hash);
 
+    /**
+     * Indicates whether a metric with the given hash exists.
+     *
+     * @param hash metric hash
+     * @return boolean indicating whether a corresponding metric exists
+     */
+    boolean existsByHash(@Param("hash") String hash);
 
     /**
      * Finds a list of metrics by its user.
@@ -61,7 +65,8 @@ public interface MetricRepository extends PagingAndSortingRepository<Metric, Lon
     /**
      * Finds a list of metrics by its matching key.
      *
-     * @param key Matching key.
+     * @param key      Matching key.
+     * @param pageable paging params
      * @return List of metrics by its matching key
      */
     @Query(nativeQuery = true, value = "SELECT * FROM metric m WHERE m.ukey LIKE :key order by m.ukey", countQuery = "SELECT count(*) FROM metric m WHERE m.ukey LIKE :key")
@@ -84,6 +89,4 @@ public interface MetricRepository extends PagingAndSortingRepository<Metric, Lon
      */
     @Query("select mmm.metric from MetricDetectorMapping mmm where mmm.detector.uuid = :uuid")
     List<Metric> findByDetectorUuid(@Param("uuid") String uuid);
-
-
 }

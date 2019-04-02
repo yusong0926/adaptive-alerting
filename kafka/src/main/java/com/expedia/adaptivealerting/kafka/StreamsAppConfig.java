@@ -26,55 +26,53 @@ import static com.expedia.adaptivealerting.core.util.AssertUtil.notNull;
 
 /**
  * Kafka streams application configuration. Consolidates both Typesafe Config and Streams Config.
- *
- * @author Willie Wheeler
  */
 public class StreamsAppConfig {
-    
+
     /**
      * Kafka streams configuration key.
      */
     private static final String CK_STREAMS = "streams";
-    
+
     /**
      * Inbound topic configuration key.
      */
-    private static final String CK_INBOUND_TOPIC = "inbound-topic";
-    
+    private static final String CK_INPUT_TOPIC = "inbound-topic";
+
     /**
      * Outbound topic configuration key.
      */
-    private static final String CK_OUTBOUND_TOPIC = "outbound-topic";
-    
+    private static final String CK_OUTPUT_TOPIC = "outbound-topic";
+
     /**
      * Health status path configuration key.
      */
     private static final String CK_HEALTH_STATUS_PATH = "health.status.path";
-    
+
     @Getter
     private final Config typesafeConfig;
-    
+
     @Getter
     private final StreamsConfig streamsConfig;
-    
+
     @Getter
-    private final String inboundTopic;
-    
+    private final String inputTopic;
+
     @Getter
-    private final String outboundTopic;
-    
+    private final String outputTopic;
+
     @Getter
     private final String healthStatusPath;
-    
+
     public StreamsAppConfig(Config typesafeConfig) {
         notNull(typesafeConfig, "typesafeConfig can't be null");
         this.typesafeConfig = typesafeConfig;
         this.streamsConfig = toStreamsConfig(typesafeConfig.getConfig(CK_STREAMS));
-        this.inboundTopic = typesafeConfig.getString(CK_INBOUND_TOPIC);
-        this.outboundTopic = typesafeConfig.getString(CK_OUTBOUND_TOPIC);
+        this.inputTopic = typesafeConfig.getString(CK_INPUT_TOPIC);
+        this.outputTopic = typesafeConfig.getString(CK_OUTPUT_TOPIC);
         this.healthStatusPath = typesafeConfig.getString(CK_HEALTH_STATUS_PATH);
     }
-    
+
     private StreamsConfig toStreamsConfig(Config config) {
         val props = new Properties();
         config.entrySet().forEach(e -> props.setProperty(e.getKey(), config.getString(e.getKey())));

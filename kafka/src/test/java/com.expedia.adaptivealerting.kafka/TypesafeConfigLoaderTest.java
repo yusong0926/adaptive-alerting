@@ -21,17 +21,14 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * @author Willie Wheeler
- */
 public class TypesafeConfigLoaderTest {
     private TypesafeConfigLoader loader;
-    
+
     @Before
     public void setUp() {
         this.loader = new TypesafeConfigLoader("ad-mapper");
     }
-    
+
     @Test
     public void testLoadBaseConfig() {
         val config = loader.loadBaseConfig();

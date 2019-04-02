@@ -18,20 +18,21 @@ package com.expedia.adaptivealerting.tools.pipeline.util;
 import com.expedia.adaptivealerting.tools.pipeline.sink.AnomalyChartSink;
 import com.expedia.adaptivealerting.tools.visualization.ChartSeries;
 import com.expedia.adaptivealerting.tools.visualization.ChartUtil;
-import org.jfree.chart.JFreeChart;
+import lombok.val;
 
 import static com.expedia.adaptivealerting.core.util.AssertUtil.notNull;
 
-/**
- * @author Willie Wheeler
- */
 public final class PipelineFactory {
-    
+
+    // Prevent instantiation
+    private PipelineFactory() {
+    }
+
     public static AnomalyChartSink createChartSink(String title) {
         notNull(title, "title can't be null");
-        
-        final ChartSeries chartSeries = new ChartSeries();
-        final JFreeChart chart = ChartUtil.createChart(title, chartSeries);
+
+        val chartSeries = new ChartSeries();
+        val chart = ChartUtil.createChart(title, chartSeries);
         return new AnomalyChartSink(chart, chartSeries);
     }
 }

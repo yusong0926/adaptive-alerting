@@ -15,7 +15,7 @@
  */
 package com.expedia.adaptivealerting.anomdetect;
 
-import com.expedia.adaptivealerting.anomdetect.source.DetectorSource;
+import com.expedia.adaptivealerting.anomdetect.comp.DetectorSource;
 import com.expedia.adaptivealerting.core.data.MappedMetricData;
 import com.expedia.metrics.MetricData;
 import lombok.Getter;
@@ -31,18 +31,15 @@ import static com.expedia.adaptivealerting.core.util.AssertUtil.notNull;
 /**
  * Entry into the Adaptive Alerting runtime. Its job is find for any incoming {@link MetricData} the corresponding set
  * of mapped detectors, creating a {@link MappedMetricData} for each.
- *
- * @author David Sutherland
- * @author Willie Wheeler
  */
 @RequiredArgsConstructor
 @Slf4j
 public class DetectorMapper {
-    
+
     @Getter
     @NonNull
     private DetectorSource detectorSource;
-    
+
     /**
      * Maps an {@link MetricData} to its corresponding set of {@link MappedMetricData}s.
      *
@@ -52,9 +49,9 @@ public class DetectorMapper {
     public Set<MappedMetricData> map(MetricData metricData) {
         notNull(metricData, "metricData can't be null");
         return detectorSource
-                .findDetectorMetas(metricData.getMetricDefinition())
+                .findDetectorUuids(metricData.getMetricDefinition())
                 .stream()
-                .map(meta -> new MappedMetricData(metricData, meta.getUuid(), meta.getType()))
+                .map(detectorUuid -> new MappedMetricData(metricData, detectorUuid))
                 .collect(Collectors.toSet());
     }
 }

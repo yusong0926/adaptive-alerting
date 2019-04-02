@@ -19,16 +19,16 @@ import com.expedia.adaptivealerting.modelservice.util.JpaConverterJson;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.sql.Timestamp;
 import java.util.Map;
 
 /**
  * Detector entity.
- *
- * @author shsethi
  */
 @Data
 @Entity
 public class Detector {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -48,5 +48,11 @@ public class Detector {
 
     @Column(name = "created_by")
     private String createdBy;
+
+    @Column(name = "last_update_timestamp", insertable = false)
+    private Timestamp lastUpdateTimestamp;
+
+    @Column(name = "enabled", insertable = false)
+    private Boolean enabled;
 
 }

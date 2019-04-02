@@ -15,47 +15,45 @@
  */
 package com.expedia.adaptivealerting.samples;
 
-import com.expedia.adaptivealerting.anomdetect.ewma.EwmaAnomalyDetector;
-import com.expedia.adaptivealerting.anomdetect.pewma.PewmaAnomalyDetector;
+import com.expedia.adaptivealerting.anomdetect.forecast.point.EwmaDetector;
+import com.expedia.adaptivealerting.anomdetect.forecast.point.PewmaDetector;
 import com.expedia.adaptivealerting.core.evaluator.RmseEvaluator;
 import com.expedia.adaptivealerting.tools.pipeline.filter.AnomalyDetectorFilter;
 import com.expedia.adaptivealerting.tools.pipeline.filter.EvaluatorFilter;
-import com.expedia.adaptivealerting.tools.pipeline.sink.AnomalyChartSink;
 import com.expedia.adaptivealerting.tools.pipeline.source.RandomWalkMetricSource;
 import com.expedia.adaptivealerting.tools.pipeline.util.PipelineFactory;
+import lombok.val;
 
 import static com.expedia.adaptivealerting.tools.visualization.ChartUtil.createChartFrame;
 import static com.expedia.adaptivealerting.tools.visualization.ChartUtil.showChartFrame;
 
 /**
  * Sample pipeline based on a random walk with EWMA and PEWMA filters.
- *
- * @author Willie Wheeler
  */
 public class RandomWalkEwmaVsPewma {
-    
+
     public static void main(String[] args) {
-        final RandomWalkMetricSource source = new RandomWalkMetricSource();
-        
-        final AnomalyDetectorFilter ewmaAD = new AnomalyDetectorFilter(new EwmaAnomalyDetector());
-        final AnomalyDetectorFilter pewmaAD = new AnomalyDetectorFilter(new PewmaAnomalyDetector());
-        
-        final EvaluatorFilter ewmaEval = new EvaluatorFilter(new RmseEvaluator());
-        final EvaluatorFilter pewmaEval = new EvaluatorFilter(new RmseEvaluator());
-    
-        final AnomalyChartSink ewmaChart = PipelineFactory.createChartSink("EWMA");
-        final AnomalyChartSink pewmaChart = PipelineFactory.createChartSink("PEWMA");
-    
+        val source = new RandomWalkMetricSource();
+
+        val ewmaAD = new AnomalyDetectorFilter(new EwmaDetector());
+        val pewmaAD = new AnomalyDetectorFilter(new PewmaDetector());
+
+        val ewmaEval = new EvaluatorFilter(new RmseEvaluator());
+        val pewmaEval = new EvaluatorFilter(new RmseEvaluator());
+
+        val ewmaChart = PipelineFactory.createChartSink("EWMA");
+        val pewmaChart = PipelineFactory.createChartSink("PEWMA");
+
         source.addSubscriber(ewmaAD);
         ewmaAD.addSubscriber(ewmaEval);
         ewmaAD.addSubscriber(ewmaChart);
         ewmaEval.addSubscriber(ewmaChart);
-    
+
         source.addSubscriber(pewmaAD);
         pewmaAD.addSubscriber(pewmaEval);
         pewmaAD.addSubscriber(pewmaChart);
         pewmaEval.addSubscriber(pewmaChart);
-        
+
         showChartFrame(createChartFrame("Random Walk", ewmaChart.getChart(), pewmaChart.getChart()));
         source.start();
     }

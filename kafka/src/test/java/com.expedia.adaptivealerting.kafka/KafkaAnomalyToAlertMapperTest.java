@@ -15,9 +15,12 @@
  */
 package com.expedia.adaptivealerting.kafka;
 
+import com.expedia.adaptivealerting.core.anomaly.AnomalyLevel;
 import com.expedia.adaptivealerting.core.anomaly.AnomalyResult;
 import com.expedia.adaptivealerting.core.data.MappedMetricData;
-import com.expedia.adaptivealerting.core.util.jackson.ObjectMapperUtil;
+import com.expedia.adaptivealerting.core.util.ObjectMapperUtil;
+import com.expedia.adaptivealerting.kafka.serde.AlertJsonSerde;
+import com.expedia.adaptivealerting.kafka.serde.MappedMetricDataJsonSerde;
 import com.expedia.adaptivealerting.kafka.util.TestObjectMother;
 import com.expedia.alertmanager.model.Alert;
 import com.expedia.metrics.MetricData;
@@ -31,7 +34,6 @@ import org.apache.kafka.streams.test.ConsumerRecordFactory;
 import org.apache.kafka.streams.test.OutputVerifier;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -41,10 +43,7 @@ import static org.mockito.Mockito.when;
 /**
  * Unit test for {@link KafkaAnomalyToAlertMapper}. See
  * https://kafka.apache.org/20/documentation/streams/developer-guide/testing.html
- *
- * @author tbahl
  */
-
 @Slf4j
 public class KafkaAnomalyToAlertMapperTest {
     private static final String KAFKA_KEY = "some-kafka-key";
@@ -91,24 +90,24 @@ public class KafkaAnomalyToAlertMapperTest {
     }
 
     private void initConfig() {
-        when(streamsAppConfig.getInboundTopic()).thenReturn(INBOUND_TOPIC);
-        when(streamsAppConfig.getOutboundTopic()).thenReturn(OUTBOUND_TOPIC);
+        when(streamsAppConfig.getInputTopic()).thenReturn(INBOUND_TOPIC);
+        when(streamsAppConfig.getOutputTopic()).thenReturn(OUTBOUND_TOPIC);
     }
 
-    private void initTestObjects(){
+    private void initTestObjects() {
         this.alert = TestObjectMother.alert();
         this.metricData = TestObjectMother.metricData();
-        this.anomalyResult = TestObjectMother.anomalyResult(metricData);
+        this.anomalyResult = new AnomalyResult(AnomalyLevel.STRONG);
         this.mappedMetricData = TestObjectMother.mappedMetricData(metricData);
         mappedMetricData.setAnomalyResult(anomalyResult);
-        log.trace("Alert={}", ObjectMapperUtil.writeValueAsString(new ObjectMapper(), alert));
+        log.trace("alert={}", ObjectMapperUtil.writeValueAsString(new ObjectMapper(), alert));
     }
 
     private void initTestMachinery() {
         val topology = new KafkaAnomalyToAlertMapper(streamsAppConfig).buildTopology();
-        this.logAndFailDriver = TestObjectMother.topologyTestDriver(topology, MappedMetricData.class, false);
+        this.logAndFailDriver = TestObjectMother.topologyTestDriver(topology, MappedMetricDataJsonSerde.class, false);
         this.mappedMetricDataFactory = TestObjectMother.mappedMetricDataFactory();
         this.stringDeserializer = new StringDeserializer();
-        this.alertDeserializer = TestObjectMother.alertDeserializer();
+        this.alertDeserializer = new AlertJsonSerde.Deser();
     }
 }

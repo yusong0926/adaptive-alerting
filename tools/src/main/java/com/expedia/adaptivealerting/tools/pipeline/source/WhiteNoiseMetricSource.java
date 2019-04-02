@@ -17,6 +17,7 @@ package com.expedia.adaptivealerting.tools.pipeline.source;
 
 import com.expedia.metrics.MetricData;
 import com.expedia.metrics.MetricDefinition;
+import lombok.val;
 
 import java.time.Instant;
 import java.util.Random;
@@ -25,15 +26,13 @@ import static java.lang.Math.sqrt;
 
 /**
  * Generates an infinite series of white noise at a given rate. The data distribution is Gaussian and configurable.
- *
- * @author Willie Wheeler
  */
 public final class WhiteNoiseMetricSource extends AbstractMetricSource {
     private MetricDefinition metricDefinition = new MetricDefinition("white-noise-metric");
     private final double mean;
     private final double stdDev;
     private final Random random = new Random();
-    
+
     /**
      * Creates a new, normally-distributed white noise generator. The series name is "white noise" and the period is one
      * second.
@@ -41,7 +40,7 @@ public final class WhiteNoiseMetricSource extends AbstractMetricSource {
     public WhiteNoiseMetricSource() {
         this("white-noise", 1000L, 0.0, 1.0);
     }
-    
+
     /**
      * Creates a new white noise data generator.
      *
@@ -55,10 +54,10 @@ public final class WhiteNoiseMetricSource extends AbstractMetricSource {
         this.mean = mean;
         this.stdDev = sqrt(variance);
     }
-    
+
     @Override
     public MetricData next() {
-        final double value = mean + stdDev * random.nextGaussian();
+        val value = mean + stdDev * random.nextGaussian();
         return new MetricData(metricDefinition, value, Instant.now().getEpochSecond());
     }
 }

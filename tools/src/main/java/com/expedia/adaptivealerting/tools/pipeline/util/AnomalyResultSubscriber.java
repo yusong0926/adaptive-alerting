@@ -15,14 +15,12 @@
  */
 package com.expedia.adaptivealerting.tools.pipeline.util;
 
-import com.expedia.adaptivealerting.core.anomaly.AnomalyResult;
+import com.expedia.adaptivealerting.core.data.MappedMetricData;
 
 /**
  * Interface for processors that subscribe to an anomaly result channel.
- *
- * @author Willie Wheeler
  */
 public interface AnomalyResultSubscriber {
-    
-    void next(AnomalyResult anomalyResult);
+
+    void next(MappedMetricData anomaly);
 }

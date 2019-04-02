@@ -17,36 +17,35 @@ package com.expedia.adaptivealerting.tools.pipeline.source;
 
 import com.expedia.metrics.MetricData;
 import com.expedia.metrics.MetricDefinition;
+import lombok.val;
 
 import java.time.Instant;
 import java.util.Random;
 
 /**
  * Generates an infinite series based on a <a href="https://en.wikipedia.org/wiki/Random_walk">random walk</a>.
- *
- * @author Willie Wheeler
  */
 public final class RandomWalkMetricSource extends AbstractMetricSource {
     private MetricDefinition metricDefinition = new MetricDefinition("random-walk-metric");
     private long currentEpochSecond = Instant.now().getEpochSecond();
     private int currentValue = 0;
     private final Random random = new Random();
-    
+
     /**
      * Creates a new random walk metric source with name "random-walk", period=1000L and startValue=0.
      */
     public RandomWalkMetricSource() {
         this("random-walk", 1000L, 0);
     }
-    
+
     public RandomWalkMetricSource(String name, long period, int startValue) {
         super(name, period);
         this.currentValue = startValue;
     }
-    
+
     @Override
     public MetricData next() {
-        final MetricData result = new MetricData(metricDefinition, currentValue, currentEpochSecond);
+        val result = new MetricData(metricDefinition, currentValue, currentEpochSecond);
         final int movement = 1 - random.nextInt(3);
         this.currentEpochSecond++;
         this.currentValue += movement;

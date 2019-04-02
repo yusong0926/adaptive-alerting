@@ -33,32 +33,26 @@ import static com.expedia.adaptivealerting.core.util.AssertUtil.notNull;
  * <p>
  * By contract the {@link MetricData} must be set.
  * </p>
- *
- * @author Willie Wheeler
  */
 @Data
 @NoArgsConstructor
 @RequiredArgsConstructor
 public final class MappedMetricData {
-    
+
     @NonNull
     private MetricData metricData;
-    
+
     @NonNull
     private UUID detectorUuid;
-    
-    @NonNull
-    private String detectorType;
-    
+
     private AnomalyResult anomalyResult;
-    
+
     public MappedMetricData(MappedMetricData orig, AnomalyResult anomalyResult) {
         notNull(orig, "orig can't be null");
         notNull(anomalyResult, "anomalyResult can't be null");
-        
+
         this.metricData = orig.getMetricData();
         this.detectorUuid = orig.getDetectorUuid();
-        this.detectorType = orig.getDetectorType();
         this.anomalyResult = anomalyResult;
     }
 }

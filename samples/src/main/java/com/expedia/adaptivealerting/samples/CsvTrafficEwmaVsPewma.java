@@ -15,19 +15,16 @@
  */
 package com.expedia.adaptivealerting.samples;
 
-import com.expedia.adaptivealerting.anomdetect.ewma.EwmaAnomalyDetector;
-import com.expedia.adaptivealerting.anomdetect.pewma.PewmaAnomalyDetector;
-import com.expedia.adaptivealerting.core.data.MetricFrame;
-import com.expedia.adaptivealerting.core.data.io.MetricFrameLoader;
+import com.expedia.adaptivealerting.anomdetect.forecast.point.EwmaDetector;
+import com.expedia.adaptivealerting.anomdetect.forecast.point.PewmaDetector;
+import com.expedia.adaptivealerting.core.data.MetricFrameLoader;
 import com.expedia.adaptivealerting.core.evaluator.RmseEvaluator;
 import com.expedia.adaptivealerting.tools.pipeline.filter.AnomalyDetectorFilter;
 import com.expedia.adaptivealerting.tools.pipeline.filter.EvaluatorFilter;
-import com.expedia.adaptivealerting.tools.pipeline.sink.AnomalyChartSink;
 import com.expedia.adaptivealerting.tools.pipeline.source.MetricFrameMetricSource;
 import com.expedia.adaptivealerting.tools.pipeline.util.PipelineFactory;
 import com.expedia.metrics.MetricDefinition;
-
-import java.io.InputStream;
+import lombok.val;
 
 import static com.expedia.adaptivealerting.tools.visualization.ChartUtil.createChartFrame;
 import static com.expedia.adaptivealerting.tools.visualization.ChartUtil.showChartFrame;
@@ -35,37 +32,35 @@ import static com.expedia.adaptivealerting.tools.visualization.ChartUtil.showCha
 /**
  * Sample that creates a pipeline for traffic data sourced from a CSV file. We have both EWMA and PEWMA charts, both
  * with RMSE evaluators.
- *
- * @author Willie Wheeler
  */
 public final class CsvTrafficEwmaVsPewma {
-    
+
     public static void main(String[] args) throws Exception {
-        
+
         // TODO Use the FileDataConnector rather than the MetricFrameLoader. [WLW]
-        final InputStream is = ClassLoader.getSystemResourceAsStream("samples/cal-inflow.csv");
-        final MetricFrame frame = MetricFrameLoader.loadCsv(new MetricDefinition("csv"), is, true);
-        final MetricFrameMetricSource source = new MetricFrameMetricSource(frame, "data", 200L);
-        
-        final AnomalyDetectorFilter ewmaAD = new AnomalyDetectorFilter(new EwmaAnomalyDetector());
-        final AnomalyDetectorFilter pewmaAD = new AnomalyDetectorFilter(new PewmaAnomalyDetector());
-    
-        final EvaluatorFilter ewmaEval = new EvaluatorFilter(new RmseEvaluator());
-        final EvaluatorFilter pewmaEval = new EvaluatorFilter(new RmseEvaluator());
-        
-        final AnomalyChartSink ewmaChart = PipelineFactory.createChartSink("EWMA");
-        final AnomalyChartSink pewmaChart = PipelineFactory.createChartSink("PEWMA");
-        
+        val is = ClassLoader.getSystemResourceAsStream("samples/cal-inflow.csv");
+        val frame = MetricFrameLoader.loadCsv(new MetricDefinition("csv"), is, true);
+        val source = new MetricFrameMetricSource(frame, "data", 200L);
+
+        val ewmaAD = new AnomalyDetectorFilter(new EwmaDetector());
+        val pewmaAD = new AnomalyDetectorFilter(new PewmaDetector());
+
+        val ewmaEval = new EvaluatorFilter(new RmseEvaluator());
+        val pewmaEval = new EvaluatorFilter(new RmseEvaluator());
+
+        val ewmaChart = PipelineFactory.createChartSink("EWMA");
+        val pewmaChart = PipelineFactory.createChartSink("PEWMA");
+
         source.addSubscriber(ewmaAD);
         ewmaAD.addSubscriber(ewmaEval);
         ewmaAD.addSubscriber(ewmaChart);
         ewmaEval.addSubscriber(ewmaChart);
-        
+
         source.addSubscriber(pewmaAD);
         pewmaAD.addSubscriber(pewmaEval);
         pewmaAD.addSubscriber(pewmaChart);
         pewmaEval.addSubscriber(pewmaChart);
-        
+
         showChartFrame(createChartFrame("Cal Inflow", ewmaChart.getChart(), pewmaChart.getChart()));
         source.start();
     }
