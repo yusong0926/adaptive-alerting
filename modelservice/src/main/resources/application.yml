@@ -43,11 +43,11 @@ test:
 vault:
   host: ${spring.cloud.vault.uri}
 
-es:
+datasource-es:
   enabled: true
   index.name: detector_mappings
   doctype: details
-  urls: localhost:9001
+  urls: localhost:8005
   connection.timeout: 40000
   max.connection.idletime: 1000
   max.total.connection: 2000
